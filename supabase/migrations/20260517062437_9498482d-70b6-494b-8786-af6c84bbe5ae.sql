@@ -1,0 +1,1 @@
+CREATE POLICY "Users delete own session" ON public.active_sessions FOR DELETE TO authenticated USING (user_id = auth.uid());

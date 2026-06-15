@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun install)",
+      "Bash(bun run dev)",
+      "Bash(bun run build)",
+      "Bash(bun run lint)",
+      "Bash(bun run format)",
+      "Bash(docker build:*)",
+      "Bash(docker run:*)",
+      "Bash(supabase:*)",
+      "Bash(gcloud run deploy:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)"
+    ]
+  }
+}
