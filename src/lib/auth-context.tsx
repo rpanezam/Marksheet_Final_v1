@@ -45,10 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function loadRole(uid: string) {
-    const { data: roleRows } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", uid);
+    const { data: roleRows } = await supabase.from("user_roles").select("role").eq("user_id", uid);
     const roles = (roleRows ?? []).map((r) => r.role as AppRole);
     const next: AppRole | null = roles.includes("super_admin")
       ? "super_admin"
@@ -85,10 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Multi-device login enabled for all roles
     await supabase
       .from("active_sessions")
-      .upsert(
-        { user_id: uid, session_id: sid, allow_multi: true },
-        { onConflict: "user_id" },
-      );
+      .upsert({ user_id: uid, session_id: sid, allow_multi: true }, { onConflict: "user_id" });
   }
 
   async function checkSessionStillActive(uid: string, knownDeleted = false) {
@@ -134,7 +128,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "user_roles", filter: `user_id=eq.${uid}` },
-        () => { void loadRole(uid); },
+        () => {
+          void loadRole(uid);
+        },
       )
       .subscribe();
     rolesChannelRef.current = ch;
@@ -196,7 +192,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setRole(null);
         setAssignedClasses([]);
-        try { if (typeof window !== "undefined") localStorage.removeItem("app.currentRole"); } catch {}
+        try {
+          if (typeof window !== "undefined") localStorage.removeItem("app.currentRole");
+        } catch {}
         teardownSession();
       }
     });

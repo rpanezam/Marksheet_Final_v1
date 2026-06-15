@@ -17,7 +17,11 @@ function localDownload(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-async function nativeShare(blob: Blob, filename: string, opts?: { title?: string; text?: string }): Promise<boolean> {
+async function nativeShare(
+  blob: Blob,
+  filename: string,
+  opts?: { title?: string; text?: string },
+): Promise<boolean> {
   const file = new File([blob], filename, { type: "application/pdf" });
   const nav = navigator as Navigator & {
     canShare?: (data: { files: File[] }) => boolean;
@@ -25,7 +29,11 @@ async function nativeShare(blob: Blob, filename: string, opts?: { title?: string
   };
   if (nav.canShare && nav.canShare({ files: [file] }) && nav.share) {
     try {
-      await nav.share({ files: [file], title: opts?.title ?? filename, text: opts?.text ?? filename });
+      await nav.share({
+        files: [file],
+        title: opts?.title ?? filename,
+        text: opts?.text ?? filename,
+      });
       return true;
     } catch (err) {
       if ((err as Error)?.name === "AbortError") return true;
@@ -49,12 +57,33 @@ function openMailtoOrDetectMissing(mailto: string): Promise<boolean> {
       document.removeEventListener("visibilitychange", onHide);
       window.removeEventListener("blur", onBlur);
     };
-    const onHide = () => { if (document.hidden) { handled = true; cleanup(); resolve(true); } };
-    const onBlur = () => { handled = true; cleanup(); resolve(true); };
+    const onHide = () => {
+      if (document.hidden) {
+        handled = true;
+        cleanup();
+        resolve(true);
+      }
+    };
+    const onBlur = () => {
+      handled = true;
+      cleanup();
+      resolve(true);
+    };
     document.addEventListener("visibilitychange", onHide);
     window.addEventListener("blur", onBlur);
-    try { window.location.href = mailto; } catch { cleanup(); resolve(false); return; }
-    setTimeout(() => { if (!handled) { cleanup(); resolve(false); } }, 1200);
+    try {
+      window.location.href = mailto;
+    } catch {
+      cleanup();
+      resolve(false);
+      return;
+    }
+    setTimeout(() => {
+      if (!handled) {
+        cleanup();
+        resolve(false);
+      }
+    }, 1200);
   });
 }
 
@@ -70,7 +99,8 @@ async function shareToEmail(blob: Blob, filename: string) {
   if (!opened) {
     await alertDialog({
       title: "No email app found",
-      message: "We couldn't find a default email app on this device. The file has been downloaded — please attach it manually.",
+      message:
+        "We couldn't find a default email app on this device. The file has been downloaded — please attach it manually.",
     });
   }
 }
@@ -82,8 +112,14 @@ function pickChoice(includeView = false, includeEmail = true): Promise<DeliverCh
       "position:fixed;inset:0;background:rgba(15,23,42,0.45);display:flex;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px);";
 
     const cs = getComputedStyle(document.documentElement);
-    const bg = cs.getPropertyValue("--card").trim() || cs.getPropertyValue("--background").trim() || "#ffffff";
-    const fg = cs.getPropertyValue("--card-foreground").trim() || cs.getPropertyValue("--foreground").trim() || "#0f172a";
+    const bg =
+      cs.getPropertyValue("--card").trim() ||
+      cs.getPropertyValue("--background").trim() ||
+      "#ffffff";
+    const fg =
+      cs.getPropertyValue("--card-foreground").trim() ||
+      cs.getPropertyValue("--foreground").trim() ||
+      "#0f172a";
     const border = cs.getPropertyValue("--border").trim() || "#e5e7eb";
     const muted = cs.getPropertyValue("--muted").trim() || "#f1f5f9";
     const wrapColor = (v: string) => (v.includes("(") || v.startsWith("#") ? v : `hsl(${v})`);
@@ -96,7 +132,8 @@ function pickChoice(includeView = false, includeEmail = true): Promise<DeliverCh
     modal.style.cssText = `background:${BG};border:1px solid ${BORDER};border-radius:16px;padding:20px;width:min(360px,90vw);box-shadow:0 20px 50px rgba(0,0,0,0.25);font-family:system-ui,sans-serif;color:${FG};`;
 
     const header = document.createElement("div");
-    header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;";
+    header.style.cssText =
+      "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;";
     const title = document.createElement("h3");
     title.textContent = "PDF কোথায় সেভ করবেন?";
     title.style.cssText = "margin:0;font-size:16px;font-weight:600;text-align:center;flex:1;";
@@ -147,7 +184,11 @@ function pickChoice(includeView = false, includeEmail = true): Promise<DeliverCh
       resolve(null);
     };
     onPop = () => cancel();
-    try { window.history.pushState({ __pdfModal: true }, ""); } catch { /* ignore */ }
+    try {
+      window.history.pushState({ __pdfModal: true }, "");
+    } catch {
+      /* ignore */
+    }
     window.addEventListener("popstate", onPop);
 
     const closeAndPop = () => {
@@ -158,7 +199,9 @@ function pickChoice(includeView = false, includeEmail = true): Promise<DeliverCh
       }
     };
     close.onclick = closeAndPop;
-    overlay.onclick = (e) => { if (e.target === overlay) closeAndPop(); };
+    overlay.onclick = (e) => {
+      if (e.target === overlay) closeAndPop();
+    };
 
     document.body.appendChild(overlay);
   });
@@ -201,14 +244,21 @@ export async function deliverPdfThree(blob: Blob, filename: string): Promise<voi
 // =====================================================================
 export type DeliverFileChoice = "whatsapp" | "email" | "local";
 
-async function nativeShareFile(file: File, opts?: { title?: string; text?: string }): Promise<boolean> {
+async function nativeShareFile(
+  file: File,
+  opts?: { title?: string; text?: string },
+): Promise<boolean> {
   const nav = navigator as Navigator & {
     canShare?: (data: { files: File[] }) => boolean;
     share?: (data: { files?: File[]; title?: string; text?: string }) => Promise<void>;
   };
   if (nav.canShare && nav.canShare({ files: [file] }) && nav.share) {
     try {
-      await nav.share({ files: [file], title: opts?.title ?? file.name, text: opts?.text ?? file.name });
+      await nav.share({
+        files: [file],
+        title: opts?.title ?? file.name,
+        text: opts?.text ?? file.name,
+      });
       return true;
     } catch (err) {
       if ((err as Error)?.name === "AbortError") return true;
@@ -226,7 +276,11 @@ async function shareToWhatsApp(blob: Blob, filename: string, mime: string) {
   // Fallback: download file + open WhatsApp with prefilled text (file must be attached manually).
   localDownload(blob, filename);
   const text = encodeURIComponent(`${filename}\n\nফাইলটি ডাউনলোড হয়েছে — WhatsApp-এ attach করুন।`);
-  try { window.open(`https://wa.me/?text=${text}`, "_blank"); } catch { /* ignore */ }
+  try {
+    window.open(`https://wa.me/?text=${text}`, "_blank");
+  } catch {
+    /* ignore */
+  }
 }
 
 async function shareFileToEmail(blob: Blob, filename: string, mime: string) {
@@ -239,7 +293,8 @@ async function shareFileToEmail(blob: Blob, filename: string, mime: string) {
   if (!opened) {
     await alertDialog({
       title: "No email app found",
-      message: "We couldn't find a default email app on this device. The file has been downloaded — please attach it manually.",
+      message:
+        "We couldn't find a default email app on this device. The file has been downloaded — please attach it manually.",
     });
   }
 }
@@ -251,8 +306,14 @@ function pickFileChoice(): Promise<DeliverFileChoice | null> {
       "position:fixed;inset:0;background:rgba(15,23,42,0.45);display:flex;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px);";
 
     const cs = getComputedStyle(document.documentElement);
-    const bg = cs.getPropertyValue("--card").trim() || cs.getPropertyValue("--background").trim() || "#ffffff";
-    const fg = cs.getPropertyValue("--card-foreground").trim() || cs.getPropertyValue("--foreground").trim() || "#0f172a";
+    const bg =
+      cs.getPropertyValue("--card").trim() ||
+      cs.getPropertyValue("--background").trim() ||
+      "#ffffff";
+    const fg =
+      cs.getPropertyValue("--card-foreground").trim() ||
+      cs.getPropertyValue("--foreground").trim() ||
+      "#0f172a";
     const border = cs.getPropertyValue("--border").trim() || "#e5e7eb";
     const muted = cs.getPropertyValue("--muted").trim() || "#f1f5f9";
     const wrapColor = (v: string) => (v.includes("(") || v.startsWith("#") ? v : `hsl(${v})`);
@@ -265,7 +326,8 @@ function pickFileChoice(): Promise<DeliverFileChoice | null> {
     modal.style.cssText = `background:${BG};border:1px solid ${BORDER};border-radius:16px;padding:20px;width:min(360px,90vw);box-shadow:0 20px 50px rgba(0,0,0,0.25);font-family:system-ui,sans-serif;color:${FG};`;
 
     const header = document.createElement("div");
-    header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;";
+    header.style.cssText =
+      "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;";
     const title = document.createElement("h3");
     title.textContent = "ফাইল কোথায় পাঠাবেন?";
     title.style.cssText = "margin:0;font-size:16px;font-weight:600;text-align:center;flex:1;";
@@ -306,7 +368,9 @@ function pickFileChoice(): Promise<DeliverFileChoice | null> {
       resolve(null);
     };
     close.onclick = cancel;
-    overlay.onclick = (e) => { if (e.target === overlay) cancel(); };
+    overlay.onclick = (e) => {
+      if (e.target === overlay) cancel();
+    };
 
     document.body.appendChild(overlay);
   });

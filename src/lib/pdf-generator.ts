@@ -63,7 +63,10 @@ async function loadWatermarkDataUrl(customLogoDataUrl?: string): Promise<string>
   const data = ctx.getImageData(0, 0, size, size);
   const d = data.data;
   for (let i = 0; i < d.length; i += 4) {
-    const r = d[i], g = d[i + 1], b = d[i + 2], a = d[i + 3];
+    const r = d[i],
+      g = d[i + 1],
+      b = d[i + 2],
+      a = d[i + 3];
     if (a === 0) continue;
     // Treat near-white as fully transparent (drop background)
     if (r > 235 && g > 235 && b > 235) {
@@ -122,7 +125,9 @@ export async function processLogoBlob(blob: Blob): Promise<string> {
   const imgData = ctx.getImageData(0, 0, size, size);
   const d = imgData.data;
   // Paper color (matches PAPER_COLOR below): light yellow
-  const PR = 255, PG = 250, PB = 220;
+  const PR = 255,
+    PG = 250,
+    PB = 220;
   // Auto-detect the source background by sampling the four corners + edges.
   // This makes the knock-out work whether the upload has a white, off-white,
   // grey, cream, or even a colored solid background.
@@ -134,11 +139,16 @@ export async function processLogoBlob(blob: Blob): Promise<string> {
   };
   const step = 6;
   for (let k = 0; k < size; k += step) {
-    pushPx(k, 0); pushPx(k, size - 1); pushPx(0, k); pushPx(size - 1, k);
+    pushPx(k, 0);
+    pushPx(k, size - 1);
+    pushPx(0, k);
+    pushPx(size - 1, k);
   }
-  let bgR = 255, bgG = 255, bgB = 255;
+  let bgR = 255,
+    bgG = 255,
+    bgB = 255;
   if (sample.length) {
-    sample.sort((a, b) => (b[0] + b[1] + b[2]) - (a[0] + a[1] + a[2]));
+    sample.sort((a, b) => b[0] + b[1] + b[2] - (a[0] + a[1] + a[2]));
     // median of the brightest half = robust paper estimate
     const top = sample.slice(0, Math.max(1, Math.floor(sample.length * 0.5)));
     bgR = top.reduce((s, p) => s + p[0], 0) / top.length;
@@ -146,11 +156,15 @@ export async function processLogoBlob(blob: Blob): Promise<string> {
     bgB = top.reduce((s, p) => s + p[2], 0) / top.length;
   }
   // Distance thresholds (in RGB space) for knock-out + feather.
-  const HARD = 28;   // <= => fully transparent (matches detected bg)
-  const SOFT = 75;   // <= => feathered blend toward paper color
+  const HARD = 28; // <= => fully transparent (matches detected bg)
+  const SOFT = 75; // <= => feathered blend toward paper color
   for (let i = 0; i < d.length; i += 4) {
-    const r = d[i], g = d[i + 1], b = d[i + 2];
-    const dr = r - bgR, dg = g - bgG, db = b - bgB;
+    const r = d[i],
+      g = d[i + 1],
+      b = d[i + 2];
+    const dr = r - bgR,
+      dg = g - bgG,
+      db = b - bgB;
     const dist = Math.sqrt(dr * dr + dg * dg + db * db);
     if (dist <= HARD) {
       d[i + 3] = 0;
@@ -210,7 +224,9 @@ export async function processSignatureBlob(blob: Blob): Promise<string> {
   lumSamples.sort((a, b) => a - b);
   const paperLum = lumSamples.length ? lumSamples[Math.floor(lumSamples.length * 0.9)] : 245;
   for (let i = 0; i < d.length; i += 4) {
-    const r = d[i], g = d[i + 1], b = d[i + 2];
+    const r = d[i],
+      g = d[i + 1],
+      b = d[i + 2];
     const lum = 0.299 * r + 0.587 * g + 0.114 * b;
     const contrast = paperLum - lum;
     const chroma = Math.max(r, g, b) - Math.min(r, g, b);
@@ -229,7 +245,10 @@ export async function processSignatureBlob(blob: Blob): Promise<string> {
   ctx.putImageData(imgData, 0, 0);
 
   // Trim transparent margins so signature scales nicely to its line
-  let minX = W, minY = H, maxX = -1, maxY = -1;
+  let minX = W,
+    minY = H,
+    maxX = -1,
+    maxY = -1;
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const a = d[(y * W + x) * 4 + 3];
@@ -262,7 +281,12 @@ function fmt(n: number | null | undefined): string {
 /**
  * Render one student's marksheet onto the current PDF page.
  */
-function renderMarksheet(doc: jsPDF, student: StudentRecord, school: SchoolInfo, logoDataUrl: string) {
+function renderMarksheet(
+  doc: jsPDF,
+  student: StudentRecord,
+  school: SchoolInfo,
+  logoDataUrl: string,
+) {
   return renderMarksheetWithAssets(doc, student, school, logoDataUrl, null, null, null, null, null);
 }
 
@@ -363,7 +387,8 @@ function renderMarksheetWithAssets(
   y += 8;
   const transcriptFontPref = school.transcriptFont || schoolFontPref;
   if (transcriptFontPref === "blackletter") ensureOldEnglishFont(doc);
-  const transcriptFont = transcriptFontPref === "blackletter" ? OLD_ENGLISH_FONT_NAME : transcriptFontPref;
+  const transcriptFont =
+    transcriptFontPref === "blackletter" ? OLD_ENGLISH_FONT_NAME : transcriptFontPref;
   doc.setFont(transcriptFont, "bold");
   const titleFontSize = school.transcriptFontSize ?? 9.9;
   doc.setFontSize(titleFontSize);
@@ -388,7 +413,10 @@ function renderMarksheetWithAssets(
   // jsPDF's align:"center" ignores charSpace, which pushes the text right.
   // Use left-align starting at the inner padding so the text sits truly centered
   // within the pill.
-  doc.text(titleText, pillX + pillPadX, textBaselineY, { baseline: "middle", charSpace: titleCharSpace } as never);
+  doc.text(titleText, pillX + pillPadX, textBaselineY, {
+    baseline: "middle",
+    charSpace: titleCharSpace,
+  } as never);
   doc.setTextColor(0, 0, 0);
 
   // QR code — placed in the empty space to the right of the ACADEMIC
@@ -519,8 +547,19 @@ function renderMarksheetWithAssets(
 
   // Summary row — auto-computed values span all 9 term cells for clean display
   const summaryRow = (label: string, value: string) => [
-    { content: label, styles: { halign: "left" as const, fontStyle: "bold" as const, fillColor: [240, 240, 240] as [number, number, number] } },
-    { content: value, colSpan: 9, styles: { halign: "center" as const, fontStyle: "bold" as const } },
+    {
+      content: label,
+      styles: {
+        halign: "left" as const,
+        fontStyle: "bold" as const,
+        fillColor: [240, 240, 240] as [number, number, number],
+      },
+    },
+    {
+      content: value,
+      colSpan: 9,
+      styles: { halign: "center" as const, fontStyle: "bold" as const },
+    },
   ];
 
   autoTable(doc, {
@@ -533,11 +572,7 @@ function renderMarksheetWithAssets(
         { content: "2nd Term", colSpan: 3 },
         { content: "3rd Term", colSpan: 3 },
       ],
-      [
-        "Total", "Obtain", "Grade",
-        "Total", "Obtain", "Grade",
-        "Total", "Obtain", "Grade",
-      ],
+      ["Total", "Obtain", "Grade", "Total", "Obtain", "Grade", "Total", "Obtain", "Grade"],
     ],
     body,
     foot: [
@@ -547,8 +582,20 @@ function renderMarksheetWithAssets(
       summaryRow("Grade:", overallGrade),
       summaryRow("GPA:", gpa.toFixed(2)),
     ],
-    styles: { fontSize: 7.5, cellPadding: 1, lineColor: [0, 0, 0], lineWidth: 0.2, halign: "center" },
-    headStyles: { fillColor: [225, 235, 250], textColor: 0, fontStyle: "bold", halign: "center", valign: "middle" },
+    styles: {
+      fontSize: 7.5,
+      cellPadding: 1,
+      lineColor: [0, 0, 0],
+      lineWidth: 0.2,
+      halign: "center",
+    },
+    headStyles: {
+      fillColor: [225, 235, 250],
+      textColor: 0,
+      fontStyle: "bold",
+      halign: "center",
+      valign: "middle",
+    },
     bodyStyles: { fillColor: [255, 255, 255] },
     footStyles: { fillColor: [255, 255, 255], textColor: 0 },
     columnStyles: { 0: { halign: "left", cellWidth: 36, fontStyle: "bold" } },
@@ -560,7 +607,7 @@ function renderMarksheetWithAssets(
   const afterTableY = (doc as any).lastAutoTable.finalY + 4;
   doc.setFontSize(9);
   doc.setFont("helvetica", "bold");
-  const status = failed === 0 && totalObtained > 0 ? "Pass" : (totalObtained === 0 ? "-" : "Fail");
+  const status = failed === 0 && totalObtained > 0 ? "Pass" : totalObtained === 0 ? "-" : "Fail";
   doc.text("Status:", innerRight - 22, afterTableY);
   doc.setTextColor(0, 0, 180);
   doc.text(status, innerRight - 2, afterTableY, { align: "right" });
@@ -602,12 +649,17 @@ function renderMarksheetWithAssets(
     body: moralOptions.map((opt) => [
       {
         content: opt,
-        styles: opt === student.moralBehavior
-          ? { fontStyle: "bold", fillColor: [225, 225, 225] }
-          : {},
+        styles:
+          opt === student.moralBehavior ? { fontStyle: "bold", fillColor: [225, 225, 225] } : {},
       },
     ]),
-    styles: { fontSize: 8, cellPadding: 1.2, lineColor: [0, 0, 0], lineWidth: 0.2, halign: "center" },
+    styles: {
+      fontSize: 8,
+      cellPadding: 1.2,
+      lineColor: [0, 0, 0],
+      lineWidth: 0.2,
+      halign: "center",
+    },
     headStyles: { fillColor: [240, 240, 240], textColor: 0, fontStyle: "bold" },
     bodyStyles: { fillColor: [255, 255, 255] },
     theme: "grid",
@@ -625,7 +677,13 @@ function renderMarksheetWithAssets(
     body: Array.from({ length: Math.max(moralOptions.length, ccItems.length) }, (_, i) => [
       ccItems[i] ?? " ",
     ]),
-    styles: { fontSize: 8, cellPadding: 1.2, lineColor: [0, 0, 0], lineWidth: 0.2, halign: "center" },
+    styles: {
+      fontSize: 8,
+      cellPadding: 1.2,
+      lineColor: [0, 0, 0],
+      lineWidth: 0.2,
+      halign: "center",
+    },
     headStyles: { fillColor: [240, 240, 240], textColor: 0, fontStyle: "bold" },
     bodyStyles: { fillColor: [255, 255, 255] },
     theme: "grid",
@@ -657,8 +715,23 @@ function renderMarksheetWithAssets(
     tableWidth: gradeTableWidth,
     body: [
       [
-        { content: "Grade Key", rowSpan: 2, styles: { fontStyle: "bold", valign: "middle", halign: "center", fillColor: [240, 240, 240] } },
-        "80% to 100%", "70% to 79.99%", "60% to 69.99%", "50% to 59.99%", "40% to 49.99%", "33% to 39.99%", "Below 33%",
+        {
+          content: "Grade Key",
+          rowSpan: 2,
+          styles: {
+            fontStyle: "bold",
+            valign: "middle",
+            halign: "center",
+            fillColor: [240, 240, 240],
+          },
+        },
+        "80% to 100%",
+        "70% to 79.99%",
+        "60% to 69.99%",
+        "50% to 59.99%",
+        "40% to 49.99%",
+        "33% to 39.99%",
+        "Below 33%",
       ],
       [
         { content: "A+", styles: { fontStyle: "bold" } },
@@ -670,7 +743,14 @@ function renderMarksheetWithAssets(
         { content: "F", styles: { fontStyle: "bold" } },
       ],
     ],
-    styles: { fontSize: 6, cellPadding: 0.8, halign: "center", valign: "middle", lineColor: [0, 0, 0], lineWidth: 0.2 },
+    styles: {
+      fontSize: 6,
+      cellPadding: 0.8,
+      halign: "center",
+      valign: "middle",
+      lineColor: [0, 0, 0],
+      lineWidth: 0.2,
+    },
     bodyStyles: { fillColor: [255, 255, 255] },
     columnStyles: { 0: { cellWidth: 18 } },
     theme: "grid",
@@ -714,17 +794,25 @@ function renderMarksheetWithAssets(
       const targetH = labelH * 1.3 * 1.7 * 1.5;
       // Box: width = signature line width (with small padding),
       // height = vertical space above the line down to the previous block.
-      const maxW = (lineX2 - lineX1) - 2;
+      const maxW = lineX2 - lineX1 - 2;
       const maxH = Math.max(4, Math.min(sigY - gradeEndY - 2, 18));
       let h = Math.min(targetH, maxH);
       let w = h * aspect;
-      if (w > maxW) { w = maxW; h = w / aspect; }
-      if (h > maxH) { h = maxH; w = h * aspect; }
+      if (w > maxW) {
+        w = maxW;
+        h = w / aspect;
+      }
+      if (h > maxH) {
+        h = maxH;
+        w = h * aspect;
+      }
       const cx = (lineX1 + lineX2) / 2;
       const x = cx - w / 2;
       const y = sigY - h - 0.5;
       doc.addImage(dataUrl, "PNG", x, y, w, h, undefined, "FAST");
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
   drawSig(principalSigDataUrl, sigLeftX, sigRightX);
   drawSig(teacherSigDataUrl, teacherLeftX, teacherRightX);
@@ -736,9 +824,9 @@ function renderMarksheetWithAssets(
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const GState = (doc as any).GState;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const gsOverlay = GState ? new GState({ opacity: 0.28 }) : null;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const gsReset = GState ? new GState({ opacity: 1 }) : null;
       if (gsOverlay) (doc as any).setGState(gsOverlay);
       const wmSize = 132;
@@ -746,9 +834,10 @@ function renderMarksheetWithAssets(
       const wmY = (pageH - wmSize) / 2;
       doc.addImage(watermarkDataUrl, "PNG", wmX, wmY, wmSize, wmSize, undefined, "FAST");
       if (gsReset) (doc as any).setGState(gsReset);
-    } catch { /* ignore if GState unsupported */ }
+    } catch {
+      /* ignore if GState unsupported */
+    }
   }
-
 }
 
 export async function generateMarksheetsPDF(
@@ -768,7 +857,17 @@ export async function generateMarksheetsPDF(
   for (let i = 0; i < students.length; i++) {
     if (i > 0) doc.addPage();
     const qrDataUrl = await buildVerifyQr(qrIdFor(students[i]), verifyBaseUrl);
-    renderMarksheetWithAssets(doc, students[i], school, logoDataUrl, bismillahDataUrl, watermarkDataUrl, qrDataUrl, principalSigDataUrl ?? null, teacherSigDataUrl ?? null);
+    renderMarksheetWithAssets(
+      doc,
+      students[i],
+      school,
+      logoDataUrl,
+      bismillahDataUrl,
+      watermarkDataUrl,
+      qrDataUrl,
+      principalSigDataUrl ?? null,
+      teacherSigDataUrl ?? null,
+    );
     onProgress?.(i + 1, students.length);
     // Yield to UI thread every 10 students to keep mobile responsive
     if (i % 10 === 0) await new Promise((r) => setTimeout(r, 0));
@@ -790,7 +889,17 @@ export async function generateSingleMarksheetPDF(
   const bismillahDataUrl = await loadBismillahDataUrl();
   const watermarkDataUrl = await loadWatermarkDataUrl(customLogoDataUrl);
   const qrDataUrl = await buildVerifyQr(qrIdFor(student), verifyBaseUrl);
-  renderMarksheetWithAssets(doc, student, school, logoDataUrl, bismillahDataUrl, watermarkDataUrl, qrDataUrl, principalSigDataUrl ?? null, teacherSigDataUrl ?? null);
+  renderMarksheetWithAssets(
+    doc,
+    student,
+    school,
+    logoDataUrl,
+    bismillahDataUrl,
+    watermarkDataUrl,
+    qrDataUrl,
+    principalSigDataUrl ?? null,
+    teacherSigDataUrl ?? null,
+  );
   return doc.output("blob");
 }
 

@@ -35,8 +35,13 @@ function LoginPage() {
     setInfo(null);
     try {
       if (mode === "signin") {
-        const loginEmail = email.includes("@") ? email.trim() : `${email.trim().toLowerCase()}@teachers.local`;
-        const { data: signInData, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+        const loginEmail = email.includes("@")
+          ? email.trim()
+          : `${email.trim().toLowerCase()}@teachers.local`;
+        const { data: signInData, error } = await supabase.auth.signInWithPassword({
+          email: loginEmail,
+          password,
+        });
         if (error) throw error;
         const uid = signInData.user?.id;
         if (uid) {
@@ -141,12 +146,8 @@ function LoginPage() {
             className="w-full cursor-text rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
           />
 
-          {error && (
-            <p className="text-xs text-destructive">{error}</p>
-          )}
-          {info && (
-            <p className="text-xs text-primary">{info}</p>
-          )}
+          {error && <p className="text-xs text-destructive">{error}</p>}
+          {info && <p className="text-xs text-primary">{info}</p>}
 
           <button
             type="submit"
@@ -162,7 +163,11 @@ function LoginPage() {
             <>
               No account?{" "}
               <button
-                onClick={() => { setMode("signup"); setError(null); setInfo(null); }}
+                onClick={() => {
+                  setMode("signup");
+                  setError(null);
+                  setInfo(null);
+                }}
                 className="text-primary font-medium hover:underline"
               >
                 Create one
@@ -172,7 +177,11 @@ function LoginPage() {
             <>
               Have an account?{" "}
               <button
-                onClick={() => { setMode("signin"); setError(null); setInfo(null); }}
+                onClick={() => {
+                  setMode("signin");
+                  setError(null);
+                  setInfo(null);
+                }}
                 className="text-primary font-medium hover:underline"
               >
                 Sign in

@@ -85,35 +85,44 @@ tr > th,
 :root {
   --radius: 0.625rem;
   --background: oklch(0.985 0.005 150);
-  --foreground: oklch(0.20 0.03 150);
+  --foreground: oklch(0.2 0.03 150);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.20 0.03 150);
+  --card-foreground: oklch(0.2 0.03 150);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.20 0.03 150);
+  --popover-foreground: oklch(0.2 0.03 150);
   --primary: oklch(0.42 0.12 158);
   --primary-foreground: oklch(0.99 0.01 90);
   --primary-glow: oklch(0.55 0.14 155);
   --secondary: oklch(0.96 0.015 150);
   --secondary-foreground: oklch(0.28 0.05 155);
   --muted: oklch(0.965 0.008 150);
-  --muted-foreground: oklch(0.50 0.02 155);
+  --muted-foreground: oklch(0.5 0.02 155);
   --accent: oklch(0.94 0.03 155);
-  --accent-foreground: oklch(0.30 0.06 155);
+  --accent-foreground: oklch(0.3 0.06 155);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(0.91 0.01 150);
   --input: oklch(0.91 0.01 150);
-  --ring: oklch(0.55 0.10 155);
+  --ring: oklch(0.55 0.1 155);
 
   --gradient-primary: linear-gradient(135deg, var(--primary), var(--primary-glow));
   --gradient-surface: linear-gradient(180deg, oklch(1 0 0), oklch(0.97 0.01 150));
-  --shadow-sm: 0 1px 2px oklch(0.20 0.04 150 / 0.06);
-  --shadow-card: 0 1px 3px oklch(0.20 0.04 150 / 0.05), 0 1px 2px oklch(0.20 0.04 150 / 0.04);
-  --shadow-elevated: 0 8px 24px -8px oklch(0.20 0.04 150 / 0.18), 0 2px 6px oklch(0.20 0.04 150 / 0.06);
+  --shadow-sm: 0 1px 2px oklch(0.2 0.04 150 / 0.06);
+  --shadow-card: 0 1px 3px oklch(0.2 0.04 150 / 0.05), 0 1px 2px oklch(0.2 0.04 150 / 0.04);
+  --shadow-elevated:
+    0 8px 24px -8px oklch(0.2 0.04 150 / 0.18), 0 2px 6px oklch(0.2 0.04 150 / 0.06);
   --shadow-primary: 0 6px 20px -6px oklch(0.42 0.12 158 / 0.35);
-  --shadow-glow: 0 2px 8px -2px color-mix(in oklch, var(--primary) 22%, transparent), 0 6px 16px -6px color-mix(in oklch, var(--primary) 18%, transparent);
-  --shadow-glow-soft: 0 1px 4px color-mix(in oklch, var(--primary) 14%, transparent), 0 2px 8px -2px color-mix(in oklch, var(--primary) 10%, transparent);
-  --gradient-glow-radial: radial-gradient(ellipse at center, color-mix(in oklch, var(--primary) 6%, transparent) 0%, transparent 70%);
+  --shadow-glow:
+    0 2px 8px -2px color-mix(in oklch, var(--primary) 22%, transparent),
+    0 6px 16px -6px color-mix(in oklch, var(--primary) 18%, transparent);
+  --shadow-glow-soft:
+    0 1px 4px color-mix(in oklch, var(--primary) 14%, transparent),
+    0 2px 8px -2px color-mix(in oklch, var(--primary) 10%, transparent);
+  --gradient-glow-radial: radial-gradient(
+    ellipse at center,
+    color-mix(in oklch, var(--primary) 6%, transparent) 0%,
+    transparent 70%
+  );
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -176,8 +185,13 @@ tr > th,
 }
 
 @keyframes float-y {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
 }
 .animate-float {
   animation: float-y 3s ease-in-out infinite;
@@ -189,17 +203,38 @@ tr > th,
 }
 
 /* Global: capitalize first letter of every word across the project */
-p, h1, h2, h3, h4, h5, h6,
-li, label, button, a,
-th, td, dt, dd,
-figcaption, blockquote,
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+li,
+label,
+button,
+a,
+th,
+td,
+dt,
+dd,
+figcaption,
+blockquote,
 span:not(.no-cap) {
   text-transform: capitalize;
 }
 
 /* Preserve original casing for inputs, code, monospace, and opt-out class */
-input, textarea, select, code, pre, kbd, samp,
-.font-mono, .no-cap, .no-cap * {
+input,
+textarea,
+select,
+code,
+pre,
+kbd,
+samp,
+.font-mono,
+.no-cap,
+.no-cap * {
   text-transform: none !important;
 }
 
@@ -209,9 +244,10 @@ input, textarea, select, code, pre, kbd, samp,
 }
 
 .glow-focus {
-  transition: background 300ms cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1),
-              transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    background 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .glow-focus:focus-within,
 .glow-focus:hover {

@@ -15,7 +15,13 @@
  */
 
 import * as XLSX from "xlsx";
-import { getDefaultFullMarks, resolveFullMarks, isElementaryClass, type StudentRecord, type SubjectMark } from "./marksheet-types";
+import {
+  getDefaultFullMarks,
+  resolveFullMarks,
+  isElementaryClass,
+  type StudentRecord,
+  type SubjectMark,
+} from "./marksheet-types";
 
 /**
  * Excel format (long): one row per (student, subject).
@@ -155,11 +161,31 @@ export async function parseStudentsFromFile(file: File): Promise<StudentRecord[]
 // Known meta columns in WIDE format — anything else is treated as a subject column.
 const META_KEYS = new Set(
   [
-    "studentname", "student", "fathername", "father", "mothername", "mother",
-    "studentid", "id", "class", "classname", "rollno", "roll", "rollnumber",
-    "exam", "yearsession", "year", "session", "group",
-    "sectionposition", "workingdays", "totalpresent",
-    "moralbehavior", "cocurricular", "comments", "gpa",
+    "studentname",
+    "student",
+    "fathername",
+    "father",
+    "mothername",
+    "mother",
+    "studentid",
+    "id",
+    "class",
+    "classname",
+    "rollno",
+    "roll",
+    "rollnumber",
+    "exam",
+    "yearsession",
+    "year",
+    "session",
+    "group",
+    "sectionposition",
+    "workingdays",
+    "totalpresent",
+    "moralbehavior",
+    "cocurricular",
+    "comments",
+    "gpa",
   ].map((s) => s.toLowerCase()),
 );
 
@@ -172,10 +198,7 @@ function normKey(k: string): string {
  * একটি কলামে obtained marks হিসেবে থাকে। মেটা কলাম বাদ দিয়ে
  * বাকি সব কলাম সাবজেক্ট হিসাবে নেয়া হয়।
  */
-function parseWide(
-  rows: Record<string, unknown>[],
-  headerKeys: string[],
-): StudentRecord[] {
+function parseWide(rows: Record<string, unknown>[], headerKeys: string[]): StudentRecord[] {
   const subjectHeaders = headerKeys.filter((k) => !META_KEYS.has(normKey(k)));
   const out: StudentRecord[] = [];
   for (const r of rows) {
@@ -234,15 +257,19 @@ export function downloadSampleExcel(
     customSubjects && customSubjects.length
       ? customSubjects
       : [
-          "Bangla 1st", "Bangla 2nd", "English 1st", "English 2nd",
-          "Mathematics", "Religion", "General Science",
-          "BD & Global Studies", "Agriculture", "ICT",
+          "Bangla 1st",
+          "Bangla 2nd",
+          "English 1st",
+          "English 2nd",
+          "Mathematics",
+          "Religion",
+          "General Science",
+          "BD & Global Studies",
+          "Agriculture",
+          "ICT",
         ];
 
-  const headers = [
-    "Student Name", "Father Name", "Mother Name", "Class", "Roll No",
-    ...subjects,
-  ];
+  const headers = ["Student Name", "Father Name", "Mother Name", "Class", "Roll No", ...subjects];
 
   const cls = (className && className.trim()) || "SIX-Day-A";
 
@@ -251,14 +278,14 @@ export function downloadSampleExcel(
       "Student Name": "ASRAFUL KHAN APON",
       "Father Name": "MD SHAJAHAN KHAN",
       "Mother Name": "AFROZA AKTER",
-      "Class": cls,
+      Class: cls,
       "Roll No": 1,
     },
     {
       "Student Name": "",
       "Father Name": "",
       "Mother Name": "",
-      "Class": cls,
+      Class: cls,
       "Roll No": "",
     },
   ].map((base) => {
@@ -270,7 +297,11 @@ export function downloadSampleExcel(
   const ws = XLSX.utils.json_to_sheet(sample, { header: headers });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Students");
-  const safe = (s?: string) => (s || "").trim().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
+  const safe = (s?: string) =>
+    (s || "")
+      .trim()
+      .replace(/[^a-z0-9]+/gi, "-")
+      .replace(/^-|-$/g, "");
   const parts = [
     safe(cls),
     safe(meta?.exam),

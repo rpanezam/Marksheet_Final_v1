@@ -42,7 +42,9 @@ export function setPasswordEnabledForRole(role: PwRole, enabled: boolean) {
     const map = getPasswordEnabledMap();
     map[role] = enabled;
     localStorage.setItem(ENABLED_KEY, JSON.stringify(map));
-  } catch { /* localStorage unavailable হলে silently fail */ }
+  } catch {
+    /* localStorage unavailable হলে silently fail */
+  }
 }
 
 /** সব role এর জন্য global password toggle পড়া */
@@ -60,7 +62,9 @@ export function getPasswordGloballyEnabled(): boolean {
 export function setPasswordGloballyEnabled(enabled: boolean) {
   try {
     localStorage.setItem(GLOBAL_ENABLED_KEY, enabled ? "1" : "0");
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 /** বর্তমান user এর role localStorage থেকে পড়া */
@@ -76,7 +80,11 @@ function getCurrentRole(): PwRole | null {
 
 /** সংরক্ষিত delete password পড়া */
 export function getDeletePassword(): string | null {
-  try { return localStorage.getItem(KEY); } catch { return null; }
+  try {
+    return localStorage.getItem(KEY);
+  } catch {
+    return null;
+  }
 }
 
 /** Delete password set বা remove করা */
@@ -84,7 +92,9 @@ export function setDeletePasswordValue(pw: string | null) {
   try {
     if (pw == null || pw === "") localStorage.removeItem(KEY);
     else localStorage.setItem(KEY, pw);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 /**
@@ -94,7 +104,7 @@ export function setDeletePasswordValue(pw: string | null) {
  * @returns true = user proceed করতে পারবে, false = blocked
  */
 export async function requireDeletePassword(
-  message = "Enter password to continue:"
+  message = "Enter password to continue:",
 ): Promise<boolean> {
   // Global toggle OFF থাকলে কোনো password জিজ্ঞেস করা হবে না
   if (!getPasswordGloballyEnabled()) return true;

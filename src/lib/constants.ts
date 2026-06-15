@@ -12,8 +12,18 @@ export const APP_SETTINGS_KEYS = {
 
 // সকল class এর ordered list — একবারই define, সব জায়গায় import করে ব্যবহার
 export const ALL_CLASSES = [
-  "Playgroup", "Nursery", "One", "Two", "Three", "Four",
-  "Five", "Six", "Seven", "Eight", "Nine", "Ten",
+  "Playgroup",
+  "Nursery",
+  "One",
+  "Two",
+  "Three",
+  "Four",
+  "Five",
+  "Six",
+  "Seven",
+  "Eight",
+  "Nine",
+  "Ten",
 ] as const;
 
-export type ClassName = typeof ALL_CLASSES[number];
+export type ClassName = (typeof ALL_CLASSES)[number];

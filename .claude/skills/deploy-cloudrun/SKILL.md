@@ -10,22 +10,24 @@ Google Cloud Run-এ চলে। নিচের ধাপগুলো ঠি�
 
 ## প্রয়োজনীয় তথ্য (Infrastructure)
 
-| বিষয় | মান |
-|------|-----|
-| GCP Project ID | `gmail-and-telegram-480114` |
-| Cloud Run Service | `marksheetgenerator-crs` |
-| Region | `us-central1` (Iowa) |
-| Container Port | `8080` (nginx) |
-| Domain | `marksheet.as-sunnah-madrasah.org` |
+| বিষয়             | মান                                |
+| ----------------- | ---------------------------------- |
+| GCP Project ID    | `gmail-and-telegram-480114`        |
+| Cloud Run Service | `marksheetgenerator-crs`           |
+| Region            | `us-central1` (Iowa)               |
+| Container Port    | `8080` (nginx)                     |
+| Domain            | `marksheet.as-sunnah-madrasah.org` |
 
 ## Deploy করার আগে যাচাই (Pre-flight checks)
 
 ১. কোডে কোনো error নেই তা নিশ্চিত করো:
+
 ```bash
 bun run lint
 ```
 
 ২. Build সফল হয় কিনা locally পরীক্ষা করো (build output `dist/client/` এ যায়):
+
 ```bash
 bun run build
 ```
@@ -48,12 +50,12 @@ gcloud run deploy marksheetgenerator-crs --source . --region us-central1 --platf
 
 ## সাধারণ সমস্যা
 
-| সমস্যা | কারণ ও সমাধান |
-|--------|----------------|
-| `bun run build` fail | TypeScript বা import error — আগে ঠিক করো |
-| gcloud auth error | `gcloud auth login` চালাতে বলো ব্যবহারকারীকে |
-| Container port mismatch | অবশ্যই `8080` — Dockerfile-এর nginx এই port-এ listen করে |
-| Env var হারিয়ে গেছে | Supabase anon key Dockerfile-এ baked আছে (build-time), আলাদা করে দিতে হয় না |
+| সমস্যা                  | কারণ ও সমাধান                                                                |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `bun run build` fail    | TypeScript বা import error — আগে ঠিক করো                                     |
+| gcloud auth error       | `gcloud auth login` চালাতে বলো ব্যবহারকারীকে                                 |
+| Container port mismatch | অবশ্যই `8080` — Dockerfile-এর nginx এই port-এ listen করে                     |
+| Env var হারিয়ে গেছে    | Supabase anon key Dockerfile-এ baked আছে (build-time), আলাদা করে দিতে হয় না |
 
 ## মনে রাখার নিয়ম
 

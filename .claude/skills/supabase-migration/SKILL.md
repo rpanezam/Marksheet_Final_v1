@@ -20,15 +20,15 @@ MarksheetGenerator-এর database হলো Supabase PostgreSQL। সব schem
 
 ## বর্তমান Tables
 
-| Table | কাজ |
-|-------|-----|
-| `marksheet_records` | প্রতি student-এর subject-wise marks |
-| `marksheet_history` | পুরো class-এর snapshot |
-| `user_roles` | admin / teacher role (enum: `app_role`) |
-| `teacher_classes` | কোন teacher কোন class দেখবে |
-| `teacher_passwords` | teacher-এর custom password |
-| `active_sessions` | multi-login control |
-| `app_settings` | key-value JSON settings |
+| Table               | কাজ                                     |
+| ------------------- | --------------------------------------- |
+| `marksheet_records` | প্রতি student-এর subject-wise marks     |
+| `marksheet_history` | পুরো class-এর snapshot                  |
+| `user_roles`        | admin / teacher role (enum: `app_role`) |
+| `teacher_classes`   | কোন teacher কোন class দেখবে             |
+| `teacher_passwords` | teacher-এর custom password              |
+| `active_sessions`   | multi-login control                     |
+| `app_settings`      | key-value JSON settings                 |
 
 > Table-এর পূর্ণ column টাইপ দেখতে: `src/integrations/supabase/types.ts`
 
@@ -43,6 +43,7 @@ supabase link --project-ref lepbljtyhscjcaoveiom
 ```bash
 supabase migration new <descriptive_name>
 ```
+
 এটি `supabase/migrations/<timestamp>_<descriptive_name>.sql` ফাইল বানায়।
 এই ফাইলে SQL লেখো (CREATE TABLE / ALTER TABLE / policy ইত্যাদি)।
 

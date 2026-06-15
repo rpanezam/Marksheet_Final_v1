@@ -202,18 +202,32 @@ async function prepareStaticLogoForCertificate(srcUrl: string): Promise<string> 
     const d = imageData.data;
 
     // Estimate background colour from the border pixels (logo sits on white).
-    let sr = 0, sg = 0, sb = 0, n = 0;
+    let sr = 0,
+      sg = 0,
+      sb = 0,
+      n = 0;
     const sample = (x: number, y: number) => {
       const i = (y * w + x) * 4;
       if (d[i + 3] < 12) return;
-      sr += d[i]; sg += d[i + 1]; sb += d[i + 2]; n++;
+      sr += d[i];
+      sg += d[i + 1];
+      sb += d[i + 2];
+      n++;
     };
     const sx = Math.max(1, Math.floor(w / 48));
     const sy = Math.max(1, Math.floor(h / 48));
-    for (let x = 0; x < w; x += sx) { sample(x, 0); sample(x, h - 1); }
-    for (let y = 0; y < h; y += sy) { sample(0, y); sample(w - 1, y); }
+    for (let x = 0; x < w; x += sx) {
+      sample(x, 0);
+      sample(x, h - 1);
+    }
+    for (let y = 0; y < h; y += sy) {
+      sample(0, y);
+      sample(w - 1, y);
+    }
     if (!n) return srcUrl;
-    const br = sr / n, bg = sg / n, bb = sb / n;
+    const br = sr / n,
+      bg = sg / n,
+      bb = sb / n;
     const bgLum = 0.299 * br + 0.587 * bg + 0.114 * bb;
     if (bgLum < 200) {
       staticLogoCache.set(srcUrl, srcUrl);
@@ -221,22 +235,35 @@ async function prepareStaticLogoForCertificate(srcUrl: string): Promise<string> 
     }
 
     // Parchment tint (matches the certificate paper) for warmth blending.
-    const paperR = 248, paperG = 244, paperB = 228;
+    const paperR = 248,
+      paperG = 244,
+      paperB = 228;
     // Tunables: edge feather + how strongly we tint toward parchment.
-    const removeBelow = 38;   // dist <= this → fully transparent
-    const featherTo  = 78;    // dist >= this → fully opaque
-    const tintAmount = 0.10;  // 10% pull toward parchment for warmth
-    const desaturate = 0.08;  // 8% desaturation toward luminance
+    const removeBelow = 38; // dist <= this → fully transparent
+    const featherTo = 78; // dist >= this → fully opaque
+    const tintAmount = 0.1; // 10% pull toward parchment for warmth
+    const desaturate = 0.08; // 8% desaturation toward luminance
 
-    let minX = w, minY = h, maxX = -1, maxY = -1;
+    let minX = w,
+      minY = h,
+      maxX = -1,
+      maxY = -1;
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const i = (y * w + x) * 4;
         const a0 = d[i + 3];
-        if (a0 < 8) { d[i + 3] = 0; continue; }
-        const r = d[i], g = d[i + 1], b = d[i + 2];
+        if (a0 < 8) {
+          d[i + 3] = 0;
+          continue;
+        }
+        const r = d[i],
+          g = d[i + 1],
+          b = d[i + 2];
         const dist = Math.sqrt((r - br) ** 2 + (g - bg) ** 2 + (b - bb) ** 2);
-        if (dist <= removeBelow) { d[i + 3] = 0; continue; }
+        if (dist <= removeBelow) {
+          d[i + 3] = 0;
+          continue;
+        }
 
         // Smooth feather between removeBelow → featherTo.
         let alphaMul = 1;
@@ -250,7 +277,7 @@ async function prepareStaticLogoForCertificate(srcUrl: string): Promise<string> 
         const dr = r + (lum - r) * desaturate;
         const dg = g + (lum - g) * desaturate;
         const db = b + (lum - b) * desaturate;
-        d[i]     = Math.round(dr + (paperR - dr) * tintAmount);
+        d[i] = Math.round(dr + (paperR - dr) * tintAmount);
         d[i + 1] = Math.round(dg + (paperG - dg) * tintAmount);
         d[i + 2] = Math.round(db + (paperB - db) * tintAmount);
         d[i + 3] = Math.round(a0 * alphaMul);
@@ -292,7 +319,10 @@ async function polishLogoForCertificate(
   opts: LogoPolishOptions = {},
 ): Promise<string> {
   const bgThreshold = Math.max(0, opts.bgThreshold ?? DEFAULT_LOGO_POLISH.bgThreshold);
-  const featherStrength = Math.max(0.1, opts.featherStrength ?? DEFAULT_LOGO_POLISH.featherStrength);
+  const featherStrength = Math.max(
+    0.1,
+    opts.featherStrength ?? DEFAULT_LOGO_POLISH.featherStrength,
+  );
   const featherRadius = Math.max(1, opts.featherRadius ?? DEFAULT_LOGO_POLISH.featherRadius);
   const cacheKey = `${dataUrl}|${bgThreshold.toFixed(2)}|${featherStrength.toFixed(2)}|${featherRadius.toFixed(2)}`;
   const cached = polishedLogoCache.get(cacheKey);

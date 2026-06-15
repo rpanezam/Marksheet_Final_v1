@@ -15,7 +15,8 @@ export const Route = createFileRoute("/")({
       { title: "As-Sunnah — Bulk PDF from Excel" },
       {
         name: "description",
-        content: "Upload an Excel file and generate hundreds of student marksheets as a single downloadable PDF.",
+        content:
+          "Upload an Excel file and generate hundreds of student marksheets as a single downloadable PDF.",
       },
     ],
   }),

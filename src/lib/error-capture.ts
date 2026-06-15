@@ -22,12 +22,10 @@ function record(error: unknown) {
 // শুধুমাত্র সার্ভার environment এ (globalThis.addEventListener available থাকলে) listen করা হয়
 if (typeof globalThis.addEventListener === "function") {
   // Synchronous error capture
-  globalThis.addEventListener("error", (event) =>
-    record((event as ErrorEvent).error ?? event)
-  );
+  globalThis.addEventListener("error", (event) => record((event as ErrorEvent).error ?? event));
   // Async/Promise rejection capture
   globalThis.addEventListener("unhandledrejection", (event) =>
-    record((event as PromiseRejectionEvent).reason)
+    record((event as PromiseRejectionEvent).reason),
   );
 }
 

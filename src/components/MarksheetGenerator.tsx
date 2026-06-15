@@ -25,17 +25,60 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { parseStudentsFromFile, downloadSampleExcel } from "@/lib/excel-parser";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
-import { generateMarksheetsPDF, generateSingleMarksheetPDF, processLogoBlob, processSignatureBlob } from "@/lib/pdf-generator";
+import {
+  generateMarksheetsPDF,
+  generateSingleMarksheetPDF,
+  processLogoBlob,
+  processSignatureBlob,
+} from "@/lib/pdf-generator";
 import { generateCertificatePDF } from "@/lib/certificate-generator";
 import { deliverPdf, deliverPdfWithView, deliverPdfThree } from "@/lib/share-pdf";
-import { DEFAULT_SUBJECTS, getGrade, getDefaultFullMarks, resolveFullMarks, isElementaryClass, type StudentRecord, type SubjectMark } from "@/lib/marksheet-types";
+import {
+  DEFAULT_SUBJECTS,
+  getGrade,
+  getDefaultFullMarks,
+  resolveFullMarks,
+  isElementaryClass,
+  type StudentRecord,
+  type SubjectMark,
+} from "@/lib/marksheet-types";
 import { useRealtimeTables } from "@/lib/useRealtimeTables";
 import { APP_SETTINGS_KEYS, ALL_CLASSES } from "@/lib/constants";
-import { Eye, EyeOff, Home, Settings, ChevronLeft, ChevronRight, ChevronDown, X, Shield, LogOut, Upload, Pencil, Trash2, Save, FileText, Files, Plus, Download, RotateCcw, RefreshCw, Award, Printer, Copy } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Home,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  X,
+  Shield,
+  LogOut,
+  Upload,
+  Pencil,
+  Trash2,
+  Save,
+  FileText,
+  Files,
+  Plus,
+  Download,
+  RotateCcw,
+  RefreshCw,
+  Award,
+  Printer,
+  Copy,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { AdminPanel } from "@/components/AdminPanel";
-import { requireDeletePassword, getDeletePassword, setDeletePasswordValue, getPasswordGloballyEnabled, setPasswordGloballyEnabled } from "@/lib/deletePassword";
+import {
+  requireDeletePassword,
+  getDeletePassword,
+  setDeletePasswordValue,
+  getPasswordGloballyEnabled,
+  setPasswordGloballyEnabled,
+} from "@/lib/deletePassword";
 import { confirmDialog } from "@/lib/dialog";
 
 type Tab = "home" | "view" | "settings" | "admin";
@@ -80,7 +123,9 @@ function alignSubjectsToList(source: SubjectMark[], selectedSubjects: string[]):
   }
   return selectedSubjects.map((name) => {
     const existing = exact.get(name) ?? normalized.get(normalizeSubjectName(name));
-    return existing ? { ...existing, name, fullMarks: getDefaultFullMarks(name) || existing.fullMarks } : createEmptySubject(name);
+    return existing
+      ? { ...existing, name, fullMarks: getDefaultFullMarks(name) || existing.fullMarks }
+      : createEmptySubject(name);
   });
 }
 
@@ -132,7 +177,9 @@ export function MarksheetGenerator() {
         window.location.reload();
       }
     };
-    const onTouchEnd = () => { pulling = false; };
+    const onTouchEnd = () => {
+      pulling = false;
+    };
     window.addEventListener("touchstart", onTouchStart, { passive: true });
     window.addEventListener("touchmove", onTouchMove, { passive: true });
     window.addEventListener("touchend", onTouchEnd, { passive: true });
@@ -144,12 +191,29 @@ export function MarksheetGenerator() {
   }, [tab]);
   const [schoolName, setSchoolName] = useState("AS SUNNAH INTERNATIONAL SCHOOL AND MADRASAH");
   const [schoolAddress, setSchoolAddress] = useState("Bipulashar, Monohargonj, Cumilla");
-  const [schoolFont, setSchoolFont] = useState<"times" | "helvetica" | "courier" | "blackletter">("times");
-  const [transcriptFont, setTranscriptFont] = useState<"times" | "helvetica" | "courier" | "blackletter">("helvetica");
+  const [schoolFont, setSchoolFont] = useState<"times" | "helvetica" | "courier" | "blackletter">(
+    "times",
+  );
+  const [transcriptFont, setTranscriptFont] = useState<
+    "times" | "helvetica" | "courier" | "blackletter"
+  >("helvetica");
   const [transcriptFontSize, setTranscriptFontSize] = useState<number>(9.9);
   // Load global school info (admin-managed)
-  async function fetchSchoolInfo(): Promise<{ name: string; address: string; font: "times" | "helvetica" | "courier" | "blackletter"; transcriptFont: "times" | "helvetica" | "courier" | "blackletter"; transcriptFontSize: number; logoDataUrl?: string }> {
-    const fallback = { name: schoolName, address: schoolAddress, font: schoolFont, transcriptFont, transcriptFontSize };
+  async function fetchSchoolInfo(): Promise<{
+    name: string;
+    address: string;
+    font: "times" | "helvetica" | "courier" | "blackletter";
+    transcriptFont: "times" | "helvetica" | "courier" | "blackletter";
+    transcriptFontSize: number;
+    logoDataUrl?: string;
+  }> {
+    const fallback = {
+      name: schoolName,
+      address: schoolAddress,
+      font: schoolFont,
+      transcriptFont,
+      transcriptFontSize,
+    };
     try {
       const { data } = await supabase
         .from("app_settings")
@@ -157,13 +221,33 @@ export function MarksheetGenerator() {
         .eq("key", APP_SETTINGS_KEYS.SCHOOL)
         .maybeSingle();
       if (!data?.value) return fallback;
-      const v = data.value as { name?: string; address?: string; font?: string; transcriptFont?: string; transcriptFontSize?: number; logoDataUrl?: string };
+      const v = data.value as {
+        name?: string;
+        address?: string;
+        font?: string;
+        transcriptFont?: string;
+        transcriptFontSize?: number;
+        logoDataUrl?: string;
+      };
       const next = {
         name: v.name || fallback.name,
         address: v.address || fallback.address,
-        font: (v.font === "times" || v.font === "helvetica" || v.font === "courier" || v.font === "blackletter" ? v.font : fallback.font) as "times" | "helvetica" | "courier" | "blackletter",
-        transcriptFont: (v.transcriptFont === "times" || v.transcriptFont === "helvetica" || v.transcriptFont === "courier" || v.transcriptFont === "blackletter" ? v.transcriptFont : fallback.transcriptFont) as "times" | "helvetica" | "courier" | "blackletter",
-        transcriptFontSize: typeof v.transcriptFontSize === "number" ? v.transcriptFontSize : fallback.transcriptFontSize,
+        font: (v.font === "times" ||
+        v.font === "helvetica" ||
+        v.font === "courier" ||
+        v.font === "blackletter"
+          ? v.font
+          : fallback.font) as "times" | "helvetica" | "courier" | "blackletter",
+        transcriptFont: (v.transcriptFont === "times" ||
+        v.transcriptFont === "helvetica" ||
+        v.transcriptFont === "courier" ||
+        v.transcriptFont === "blackletter"
+          ? v.transcriptFont
+          : fallback.transcriptFont) as "times" | "helvetica" | "courier" | "blackletter",
+        transcriptFontSize:
+          typeof v.transcriptFontSize === "number"
+            ? v.transcriptFontSize
+            : fallback.transcriptFontSize,
         logoDataUrl: typeof v.logoDataUrl === "string" && v.logoDataUrl ? v.logoDataUrl : undefined,
       };
       setSchoolName(next.name);
@@ -186,11 +270,30 @@ export function MarksheetGenerator() {
         .eq("key", APP_SETTINGS_KEYS.SCHOOL)
         .maybeSingle();
       if (cancelled || !data?.value) return;
-      const v = data.value as { name?: string; address?: string; font?: string; transcriptFont?: string; transcriptFontSize?: number; logoDataUrl?: string };
+      const v = data.value as {
+        name?: string;
+        address?: string;
+        font?: string;
+        transcriptFont?: string;
+        transcriptFontSize?: number;
+        logoDataUrl?: string;
+      };
       if (v.name) setSchoolName(v.name);
       if (v.address) setSchoolAddress(v.address);
-      if (v.font === "times" || v.font === "helvetica" || v.font === "courier" || v.font === "blackletter") setSchoolFont(v.font);
-      if (v.transcriptFont === "times" || v.transcriptFont === "helvetica" || v.transcriptFont === "courier" || v.transcriptFont === "blackletter") setTranscriptFont(v.transcriptFont);
+      if (
+        v.font === "times" ||
+        v.font === "helvetica" ||
+        v.font === "courier" ||
+        v.font === "blackletter"
+      )
+        setSchoolFont(v.font);
+      if (
+        v.transcriptFont === "times" ||
+        v.transcriptFont === "helvetica" ||
+        v.transcriptFont === "courier" ||
+        v.transcriptFont === "blackletter"
+      )
+        setTranscriptFont(v.transcriptFont);
       if (typeof v.transcriptFontSize === "number") setTranscriptFontSize(v.transcriptFontSize);
       if (typeof v.logoDataUrl === "string" && v.logoDataUrl) setCustomLogo(v.logoDataUrl);
       const v2 = data.value as { principalSigDataUrl?: string; teacherSigDataUrl?: string };
@@ -205,12 +308,22 @@ export function MarksheetGenerator() {
         setTeacherSig(v2.teacherSigDataUrl);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
-  const [className, setClassName] = useState(() => (typeof window !== "undefined" ? localStorage.getItem("ms.className") || "" : ""));
-  const [year, setYear] = useState(() => (typeof window !== "undefined" ? localStorage.getItem("ms.year") || String(new Date().getFullYear()) : String(new Date().getFullYear())));
+  const [className, setClassName] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("ms.className") || "" : "",
+  );
+  const [year, setYear] = useState(() =>
+    typeof window !== "undefined"
+      ? localStorage.getItem("ms.year") || String(new Date().getFullYear())
+      : String(new Date().getFullYear()),
+  );
   const [exam, setExam] = useState("");
-  const [term, setTerm] = useState(() => (typeof window !== "undefined" ? localStorage.getItem("ms.term") || "" : ""));
+  const [term, setTerm] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("ms.term") || "" : "",
+  );
   const [settingsSaveMsg, setSettingsSaveMsg] = useState<string>("");
   const [settingsSubTab, setSettingsSubTab] = useState<"general" | "history">("general");
   // Global Year & Term — set by Super Admin in Admin Panel; auto-applied for
@@ -220,11 +333,19 @@ export function MarksheetGenerator() {
     const o = v as { year?: string; term?: string };
     if (typeof o.year === "string" && o.year) {
       setYear(o.year);
-      try { localStorage.setItem("ms.year", o.year); } catch { /* ignore */ }
+      try {
+        localStorage.setItem("ms.year", o.year);
+      } catch {
+        /* ignore */
+      }
     }
     if (typeof o.term === "string" && o.term) {
       setTerm(o.term);
-      try { localStorage.setItem("ms.term", o.term); } catch { /* ignore */ }
+      try {
+        localStorage.setItem("ms.term", o.term);
+      } catch {
+        /* ignore */
+      }
     }
   };
   useEffect(() => {
@@ -238,7 +359,9 @@ export function MarksheetGenerator() {
       if (cancelled) return;
       applyGlobalYearTerm(data?.value);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
   // Auto-persist Settings selections so they're always available (e.g. New Student modal)
   useEffect(() => {
@@ -246,7 +369,9 @@ export function MarksheetGenerator() {
       if (className) localStorage.setItem("ms.className", className);
       if (year) localStorage.setItem("ms.year", year);
       if (term) localStorage.setItem("ms.term", term);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [className, year, term]);
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [fileName, setFileName] = useState<string>("");
@@ -287,7 +412,16 @@ export function MarksheetGenerator() {
       return uniqueSubjects(DEFAULT_SUBJECTS, globalSubjects);
     }
     return uniqueSubjects(DEFAULT_SUBJECTS);
-  }, [globalSubjects, personalSubjects, allTeacherSubjects, personalLoaded, personalHasRow, isTeacher, isAdmin, isSuperAdmin]);
+  }, [
+    globalSubjects,
+    personalSubjects,
+    allTeacherSubjects,
+    personalLoaded,
+    personalHasRow,
+    isTeacher,
+    isAdmin,
+    isSuperAdmin,
+  ]);
   const [subjectsSavedMsg, setSubjectsSavedMsg] = useState("");
   const [newSubject, setNewSubject] = useState("");
   // Load global subjects from app_settings (visible to everyone). Falls back
@@ -304,7 +438,9 @@ export function MarksheetGenerator() {
         // Merge DEFAULT_SUBJECTS so newly added defaults propagate to all users
         setGlobalSubjects(uniqueSubjects(DEFAULT_SUBJECTS, v as string[]));
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
   const reloadPersonalSubjects = useCallback(async (uid: string) => {
     try {
@@ -321,7 +457,9 @@ export function MarksheetGenerator() {
         setPersonalSubjects([]);
         setPersonalHasRow(false);
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     setPersonalLoaded(true);
   }, []);
   useEffect(() => {
@@ -329,7 +467,11 @@ export function MarksheetGenerator() {
   }, [reloadGlobalSubjects]);
   useEffect(() => {
     if (user?.id) void reloadPersonalSubjects(user.id);
-    else { setPersonalSubjects([]); setPersonalHasRow(false); setPersonalLoaded(false); }
+    else {
+      setPersonalSubjects([]);
+      setPersonalHasRow(false);
+      setPersonalLoaded(false);
+    }
   }, [user?.id, reloadPersonalSubjects]);
   // Super Admin: load every teacher's personal subjects so the full union is visible.
   const reloadAllTeacherSubjects = useCallback(async () => {
@@ -343,10 +485,15 @@ export function MarksheetGenerator() {
         }
       }
       setAllTeacherSubjects(Array.from(merged));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
   useEffect(() => {
-    if (!isSuperAdmin) { setAllTeacherSubjects([]); return; }
+    if (!isSuperAdmin) {
+      setAllTeacherSubjects([]);
+      return;
+    }
     void reloadAllTeacherSubjects();
   }, [isSuperAdmin, reloadAllTeacherSubjects]);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -379,7 +526,9 @@ export function MarksheetGenerator() {
           principalSigDataUrl?: string;
           teacherSigDataUrl?: string;
         };
-        setCustomLogo(typeof v.logoDataUrl === "string" && v.logoDataUrl ? v.logoDataUrl : undefined);
+        setCustomLogo(
+          typeof v.logoDataUrl === "string" && v.logoDataUrl ? v.logoDataUrl : undefined,
+        );
         if (typeof v.principalSigDataUrl === "string" && v.principalSigDataUrl) {
           setPrincipalSig(v.principalSigDataUrl);
         }
@@ -449,16 +598,23 @@ export function MarksheetGenerator() {
     try {
       if (principalSig) localStorage.setItem("ms.principalSig", principalSig);
       else localStorage.removeItem("ms.principalSig");
-    } catch { /* quota */ }
+    } catch {
+      /* quota */
+    }
   }, [principalSig]);
   useEffect(() => {
     try {
       if (teacherSig) localStorage.setItem("ms.teacherSig", teacherSig);
       else localStorage.removeItem("ms.teacherSig");
-    } catch { /* quota */ }
+    } catch {
+      /* quota */
+    }
   }, [teacherSig]);
 
-  async function onSignatureFile(e: React.ChangeEvent<HTMLInputElement>, who: "principal" | "teacher") {
+  async function onSignatureFile(
+    e: React.ChangeEvent<HTMLInputElement>,
+    who: "principal" | "teacher",
+  ) {
     const file = e.target.files?.[0];
     if (!file) return;
     setSigBusy(who);
@@ -474,9 +630,7 @@ export function MarksheetGenerator() {
       if (isAdmin) {
         try {
           await persistSchoolPatch(
-            who === "principal"
-              ? { principalSigDataUrl: dataUrl }
-              : { teacherSigDataUrl: dataUrl },
+            who === "principal" ? { principalSigDataUrl: dataUrl } : { teacherSigDataUrl: dataUrl },
           );
         } catch (err) {
           setError(err instanceof Error ? err.message : "Signature সেভ হয়নি");
@@ -517,12 +671,14 @@ export function MarksheetGenerator() {
       .maybeSingle();
     const current = (data?.value ?? {}) as Record<string, unknown>;
     const next = { ...current, ...patch };
-    const { error } = await supabase
-      .from("app_settings")
-      .upsert(
-        { key: APP_SETTINGS_KEYS.SCHOOL, value: next as never, updated_at: new Date().toISOString() },
-        { onConflict: "key" },
-      );
+    const { error } = await supabase.from("app_settings").upsert(
+      {
+        key: APP_SETTINGS_KEYS.SCHOOL,
+        value: next as never,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "key" },
+    );
     if (error) throw error;
   }
 
@@ -588,10 +744,14 @@ export function MarksheetGenerator() {
       const v = n % 100;
       if (v >= 11 && v <= 13) return `${n}th`;
       switch (n % 10) {
-        case 1: return `${n}st`;
-        case 2: return `${n}nd`;
-        case 3: return `${n}rd`;
-        default: return `${n}th`;
+        case 1:
+          return `${n}st`;
+        case 2:
+          return `${n}nd`;
+        case 3:
+          return `${n}rd`;
+        default:
+          return `${n}th`;
       }
     };
     for (const list of byClass.values()) {
@@ -632,7 +792,11 @@ export function MarksheetGenerator() {
     if (!isTeacher) return;
     if (classOptions.length === 1 && className !== classOptions[0]) {
       setClassName(classOptions[0]);
-    } else if (classOptions.length > 1 && className && !(classOptions as readonly string[]).includes(className)) {
+    } else if (
+      classOptions.length > 1 &&
+      className &&
+      !(classOptions as readonly string[]).includes(className)
+    ) {
       // Current selection no longer assigned — clear it.
       setClassName("");
     }
@@ -689,10 +853,14 @@ export function MarksheetGenerator() {
         if (!existing) {
           s.subjects.push({
             name: r.subject,
-            fullMarks: isElementaryClass(r.class_name || className) ? 50 : (r.full_marks != null && Number(r.full_marks) > 0 ? Number(r.full_marks) : getDefaultFullMarks(r.subject)),
+            fullMarks: isElementaryClass(r.class_name || className)
+              ? 50
+              : r.full_marks != null && Number(r.full_marks) > 0
+                ? Number(r.full_marks)
+                : getDefaultFullMarks(r.subject),
             highestScore: r.highest_score == null ? null : Number(r.highest_score),
             obtained: matchTerm && r.obtained_marks != null ? Number(r.obtained_marks) : null,
-            letterGrade: matchTerm ? (r.letter_grade || "") : "",
+            letterGrade: matchTerm ? r.letter_grade || "" : "",
             gp: matchTerm && r.gp != null ? Number(r.gp) : null,
           });
         } else if (matchTerm && r.obtained_marks != null) {
@@ -707,10 +875,16 @@ export function MarksheetGenerator() {
         return ar - br;
       });
       if (!cancelled && list.length) {
-        setStudents(subjectList.length ? list.map((s) => ({ ...s, subjects: alignSubjectsToList(s.subjects, subjectList) })) : list);
+        setStudents(
+          subjectList.length
+            ? list.map((s) => ({ ...s, subjects: alignSubjectsToList(s.subjects, subjectList) }))
+            : list,
+        );
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [className, term, students.length, subjectList, remoteVersion]);
 
   // Term পরিবর্তন হলে — সেই Term-এর সেভ করা marks (DB থেকে) লোড করে
@@ -734,13 +908,23 @@ export function MarksheetGenerator() {
         .eq("year_session", year)
         .eq("exam", term);
       if (cancelled || error) return;
-      const byKey = new Map<string, Map<string, { obtained: number | null; fullMarks: number; grade: string; gp: number | null }>>();
+      const byKey = new Map<
+        string,
+        Map<
+          string,
+          { obtained: number | null; fullMarks: number; grade: string; gp: number | null }
+        >
+      >();
       for (const r of data || []) {
         const k = `${r.student_id || ""}|${r.roll_no || ""}`;
         if (!byKey.has(k)) byKey.set(k, new Map());
         byKey.get(k)!.set(r.subject, {
           obtained: r.obtained_marks == null ? null : Number(r.obtained_marks),
-          fullMarks: isElementaryClass(className) ? 50 : (r.full_marks != null && Number(r.full_marks) > 0 ? Number(r.full_marks) : getDefaultFullMarks(r.subject)),
+          fullMarks: isElementaryClass(className)
+            ? 50
+            : r.full_marks != null && Number(r.full_marks) > 0
+              ? Number(r.full_marks)
+              : getDefaultFullMarks(r.subject),
           grade: r.letter_grade || "",
           gp: r.gp == null ? null : Number(r.gp),
         });
@@ -749,7 +933,9 @@ export function MarksheetGenerator() {
         prev.map((s) => {
           const k = `${s.studentId || ""}|${s.rollNo || ""}`;
           const subs = byKey.get(k);
-          const baseSubjects = subjectList.length ? alignSubjectsToList(s.subjects, subjectList) : s.subjects;
+          const baseSubjects = subjectList.length
+            ? alignSubjectsToList(s.subjects, subjectList)
+            : s.subjects;
           return {
             ...s,
             exam: term,
@@ -769,7 +955,9 @@ export function MarksheetGenerator() {
       );
       lastLoadedTermRef.current = term;
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [term, className, year, students.length, subjectList]);
 
   useEffect(() => {
@@ -861,7 +1049,9 @@ export function MarksheetGenerator() {
     if (isTeacher) {
       const uid = user?.id;
       // If not seeded yet, build full list from defaults+globals then remove
-      const base = personalHasRow ? personalSubjects : uniqueSubjects(DEFAULT_SUBJECTS, globalSubjects);
+      const base = personalHasRow
+        ? personalSubjects
+        : uniqueSubjects(DEFAULT_SUBJECTS, globalSubjects);
       const next = base.filter((s) => s !== name);
       setPersonalSubjects(next);
       if (!personalHasRow) setPersonalHasRow(true);
@@ -897,7 +1087,11 @@ export function MarksheetGenerator() {
           );
         }
       }
-      setStudents(subjectList.length ? list.map((s) => ({ ...s, subjects: alignSubjectsToList(s.subjects, subjectList) })) : list);
+      setStudents(
+        subjectList.length
+          ? list.map((s) => ({ ...s, subjects: alignSubjectsToList(s.subjects, subjectList) }))
+          : list,
+      );
       setCurrentIdx(0);
       // Auto-jump to home after upload
       if (list.length) setTab("home");
@@ -923,7 +1117,9 @@ export function MarksheetGenerator() {
   }
 
   function prepareStudent(s: StudentRecord): StudentRecord {
-    const subjects: SubjectMark[] = subjectList.length ? alignSubjectsToList(s.subjects, subjectList) : s.subjects;
+    const subjects: SubjectMark[] = subjectList.length
+      ? alignSubjectsToList(s.subjects, subjectList)
+      : s.subjects;
     // সকল স্টুডেন্টের মধ্যে সর্বোচ্চ স্কোর প্রতিটি সাবজেক্টে অটো-সেট
     const withHighest = subjects.map((sub) => {
       const max = highestPerSubject.get(sub.name);
@@ -959,7 +1155,7 @@ export function MarksheetGenerator() {
                 : gpa >= 2
                   ? "Needs Improvement"
                   : "Poor — Work Hard";
-    const comments = (s.comments && s.comments.trim()) ? s.comments : autoComment;
+    const comments = s.comments && s.comments.trim() ? s.comments : autoComment;
     return {
       ...s,
       className: className || s.className,
@@ -1000,7 +1196,11 @@ export function MarksheetGenerator() {
         if (!key) continue;
         if (!out[key]) out[key] = {};
         out[key][r.subject] = {
-          fullMarks: isElementaryClass(s.className || className) ? 50 : (r.full_marks != null && Number(r.full_marks) > 0 ? Number(r.full_marks) : getDefaultFullMarks(r.subject)),
+          fullMarks: isElementaryClass(s.className || className)
+            ? 50
+            : r.full_marks != null && Number(r.full_marks) > 0
+              ? Number(r.full_marks)
+              : getDefaultFullMarks(r.subject),
           obtained: r.obtained_marks == null ? null : Number(r.obtained_marks),
           grade: r.letter_grade || "",
         };
@@ -1077,7 +1277,14 @@ export function MarksheetGenerator() {
     try {
       const prepared = prepareStudent(s);
       prepared.termsData = await fetchOtherTerms(prepared);
-      const blob = await generateSingleMarksheetPDF(prepared, await fetchSchoolInfo(), customLogo, undefined, principalSig, teacherSig);
+      const blob = await generateSingleMarksheetPDF(
+        prepared,
+        await fetchSchoolInfo(),
+        customLogo,
+        undefined,
+        principalSig,
+        teacherSig,
+      );
       const safe = (s.studentName || "marksheet").replace(/[^a-z0-9]+/gi, "-");
       await downloadBlob(blob, `${safe}-${s.rollNo || s.studentId || currentIdx + 1}.pdf`);
     } catch (err) {
@@ -1113,7 +1320,14 @@ export function MarksheetGenerator() {
     try {
       const prepared = prepareStudent(s);
       prepared.termsData = await fetchOtherTerms(prepared);
-      const blob = await generateSingleMarksheetPDF(prepared, await fetchSchoolInfo(), customLogo, undefined, principalSig, teacherSig);
+      const blob = await generateSingleMarksheetPDF(
+        prepared,
+        await fetchSchoolInfo(),
+        customLogo,
+        undefined,
+        principalSig,
+        teacherSig,
+      );
       const safe = (s.studentName || "marksheet").replace(/[^a-z0-9]+/gi, "-");
       await deliverPdfWithView(blob, `${safe}-${s.rollNo || s.studentId || currentIdx + 1}.pdf`);
     } catch (err) {
@@ -1131,13 +1345,25 @@ export function MarksheetGenerator() {
     try {
       const prepared = prepareStudent(s);
       prepared.termsData = await fetchOtherTerms(prepared);
-      const blob = await generateSingleMarksheetPDF(prepared, await fetchSchoolInfo(), customLogo, undefined, principalSig, teacherSig);
+      const blob = await generateSingleMarksheetPDF(
+        prepared,
+        await fetchSchoolInfo(),
+        customLogo,
+        undefined,
+        principalSig,
+        teacherSig,
+      );
       const url = URL.createObjectURL(blob);
       const win = window.open(url, "_blank");
       // Auto-trigger print dialog once the PDF viewer loads
       if (win) {
         win.addEventListener("load", () => {
-          try { win.focus(); win.print(); } catch { /* ignore */ }
+          try {
+            win.focus();
+            win.print();
+          } catch {
+            /* ignore */
+          }
         });
       }
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
@@ -1152,7 +1378,8 @@ export function MarksheetGenerator() {
   async function onDeleteCurrent() {
     const s = filteredStudents[currentIdx];
     if (!s) return;
-    if (!(await requireDeletePassword(`Enter password to delete "${s.studentName || "Student"}":`))) return;
+    if (!(await requireDeletePassword(`Enter password to delete "${s.studentName || "Student"}":`)))
+      return;
     const ok = await confirmDialog({
       title: "Delete student",
       message: `Delete "${s.studentName || "this student"}" permanently? This cannot be undone.`,
@@ -1163,12 +1390,17 @@ export function MarksheetGenerator() {
     // remove from DB if it has identity
     if (s.studentId || s.rollNo) {
       try {
-        let q = supabase.from("marksheet_records").delete().eq("class_name", s.className || "");
+        let q = supabase
+          .from("marksheet_records")
+          .delete()
+          .eq("class_name", s.className || "");
         if (s.studentId) q = q.eq("student_id", s.studentId);
         if (s.rollNo) q = q.eq("roll_no", s.rollNo);
         if (s.year) q = q.eq("year_session", s.year);
         await q;
-      } catch { /* non-fatal */ }
+      } catch {
+        /* non-fatal */
+      }
     }
     setStudents((prev) => {
       const hasIdentity = Boolean(s.studentId || s.rollNo);
@@ -1254,8 +1486,12 @@ export function MarksheetGenerator() {
               .eq("class_name", prepared.className || "")
               .not("id", "in", `(${keepIds.map((i) => `"${i}"`).join(",")})`);
           }
-        } catch { /* non-fatal */ }
-      } catch { /* non-fatal */ }
+        } catch {
+          /* non-fatal */
+        }
+      } catch {
+        /* non-fatal */
+      }
       setSaveMsg("✓ Saved");
       setTimeout(() => setSaveMsg(""), 2000);
     } catch (err) {
@@ -1339,175 +1575,211 @@ export function MarksheetGenerator() {
 
   const setupCard = (
     <CollapseCard title={isAdmin ? "School & Setup" : "Setup"}>
-            {isAdmin && (
-            <>
-            <div className="flex items-center justify-end gap-1.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background border border-border overflow-hidden">
+      {isAdmin && (
+        <>
+          <div className="flex items-center justify-end gap-1.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background border border-border overflow-hidden">
               {customLogo ? (
                 <img src={customLogo} alt="Logo" className="h-full w-full object-contain" />
               ) : (
                 <span className="text-[7px] text-muted-foreground">Logo</span>
               )}
-              </div>
-              <label className="cursor-pointer rounded-lg bg-[image:var(--gradient-primary)] px-2.5 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95 transition-opacity">
-                {logoBusy ? "..." : customLogo ? "Change" : "Logo"}
-                <input type="file" accept="image/*" onChange={onLogoFile} className="hidden" />
-              </label>
-              {customLogo && (
-                <button
-                  type="button"
-                  onClick={async () => { if (await requireDeletePassword("Enter password to remove logo:")) setCustomLogo(undefined); }}
-                  className="rounded-lg border border-input bg-background px-2 py-1.5 text-[11px] font-medium hover:bg-secondary transition-colors"
-                >
-                  ✕
-                </button>
-              )}
             </div>
-            </>
-            )}
-            {isAdmin && (
-              <>
-                <div className="grid gap-2 grid-cols-3 rounded-md bg-transparent shadow-none focus-within:bg-primary/15 focus-within:ring-2 focus-within:ring-primary/50 focus-within:shadow-[var(--shadow-glow-soft)] focus-within:bg-[image:var(--gradient-glow-radial)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
-                  <SmallSelect label="" value={className} onChange={setClassName} placeholder="Class" options={classOptions as string[]} />
-                  <SmallSelect label="" value={year} onChange={setYear} placeholder="Year" options={Array.from({ length: 11 }, (_, i) => String(new Date().getFullYear() - 5 + i))} />
-                  <SmallSelect label="" value={term} onChange={setTerm} placeholder="Term" options={["1st Term Assessment","2nd Term Assessment","3rd Term Assessment"]} />
-                </div>
-                <div className="flex items-center justify-end gap-2 pt-1">
-                  {settingsSaveMsg && <span className="text-[11px] font-medium text-primary">{settingsSaveMsg}</span>}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      try {
-                        localStorage.setItem("ms.className", className);
-                        localStorage.setItem("ms.year", year);
-                        localStorage.setItem("ms.term", term);
-                        setSettingsSaveMsg("✓ Saved");
-                        setTimeout(() => setSettingsSaveMsg(""), 1800);
-                      } catch {
-                        setSettingsSaveMsg("Save failed");
-                      }
-                    }}
-                    className="rounded-lg bg-[image:var(--gradient-primary)] px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95 transition-opacity"
-                  >
-                    Save
-                  </button>
-                </div>
-              </>
-            )}
-
-            {/* — Subjects — */}
-            <div className="pt-2 mt-1 border-t border-border/60 flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-foreground">Subjects</h3>
-              <span className="text-[10px] text-muted-foreground">{subjectList.length}</span>
-            </div>
-            {subjectList.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
-                {subjectList.map((name) => (
-                  <span
-                    key={name}
-                    className="inline-flex items-center gap-1 rounded-full border border-border bg-secondary/60 px-2 py-0.5 text-[10px] font-medium text-secondary-foreground"
-                  >
-                    {name}
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (isTeacher) { removeSubject(name); return; }
-                        if (await requireDeletePassword(`Enter password to remove subject "${name}":`)) removeSubject(name);
-                      }}
-                      className="text-muted-foreground hover:text-destructive"
-                      aria-label={`Remove ${name}`}
-                    >
-                      ✕
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-            <form
-              className="flex gap-1.5 rounded-md bg-transparent shadow-none focus-within:bg-primary/15 focus-within:ring-2 focus-within:ring-primary/50 focus-within:shadow-[var(--shadow-glow-soft)] focus-within:bg-[image:var(--gradient-glow-radial)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
-              onSubmit={(e) => {
-                e.preventDefault();
-                addSubject();
-              }}
-            >
-              <input
-                type="text"
-                value={newSubject}
-                onChange={(e) => setNewSubject(e.target.value)}
-                enterKeyHint="done"
-                placeholder="New subject"
-                className="flex-1 rounded-lg border border-input bg-background px-3 py-1.5 text-xs outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15"
-              />
-              <button
-                type="submit"
-                className="rounded-lg bg-[image:var(--gradient-primary)] px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95 transition-opacity"
-              >
-                +
-              </button>
-            </form>
-            <div className="flex items-center justify-end gap-2 pt-1">
-              {subjectsSavedMsg && (
-                <span className="text-[10px] font-medium text-primary">{subjectsSavedMsg}</span>
-              )}
+            <label className="cursor-pointer rounded-lg bg-[image:var(--gradient-primary)] px-2.5 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95 transition-opacity">
+              {logoBusy ? "..." : customLogo ? "Change" : "Logo"}
+              <input type="file" accept="image/*" onChange={onLogoFile} className="hidden" />
+            </label>
+            {customLogo && (
               <button
                 type="button"
-                onClick={() => {
-                  if (isAdmin) void persistGlobalSubjects(uniqueSubjects(DEFAULT_SUBJECTS, globalSubjects));
-                  else if (isTeacher && user?.id) void persistPersonalSubjects(user.id, personalSubjects);
-                  setSubjectsSavedMsg("Saved ✓");
-                  window.setTimeout(() => setSubjectsSavedMsg(""), 1500);
+                onClick={async () => {
+                  if (await requireDeletePassword("Enter password to remove logo:"))
+                    setCustomLogo(undefined);
                 }}
-                className="rounded-lg bg-[image:var(--gradient-primary)] px-4 py-1.5 text-xs font-semibold text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95 transition-opacity"
+                className="rounded-lg border border-input bg-background px-2 py-1.5 text-[11px] font-medium hover:bg-secondary transition-colors"
               >
-                Save
+                ✕
               </button>
-            </div>
-
-            {isAdmin && (
-              <>
-                {/* — Sample Template — */}
-                <div className="pt-2 mt-1 border-t border-border/60 flex items-center justify-between">
-                  <h3 className="text-xs font-semibold text-foreground">Sample Template</h3>
-                  <select
-                    value={className}
-                    onChange={(e) => setClassName(e.target.value)}
-                    className={`rounded-lg border border-input bg-background px-2 py-1 text-[10px] outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15 ${className ? "" : "text-muted-foreground"}`}
-                    title="Select class"
-                  >
-                    <option value="">Class</option>
-                    {classOptions.map((c) => (
-                      <option key={c} value={c} className="text-foreground">{c}</option>
-                    ))}
-                  </select>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => downloadSampleExcel(subjectList, className, { exam, term, year, school: schoolName })}
-                  disabled={!subjectList.length || !className.trim()}
-                  title={!className.trim() ? "Class সিলেক্ট করুন" : "Download sample template"}
-                  className="w-full rounded-lg border border-primary/30 bg-background px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
-                >
-                  ↓ Download Sample Template
-                </button>
-
-                {/* — Upload Excel — */}
-                <div className="pt-2 mt-1 border-t border-border/60">
-                  <h3 className="text-xs font-semibold text-foreground mb-1.5">Upload Excel</h3>
-                </div>
-                <label className="flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-3 py-5 cursor-pointer hover:bg-secondary/50 hover:border-primary/60 transition-all">
-                  <span className="text-sm font-semibold text-primary">⬆ Upload Excel</span>
-                  <span className="text-[10px] text-muted-foreground truncate">{fileName || "Click to choose .xlsx file"}</span>
-                  <input type="file" accept=".xlsx,.xls" onChange={onFile} className="hidden" />
-                </label>
-                {students.length > 0 && (
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
-                    ✓ {students.length} student{students.length === 1 ? "" : "s"} loaded
-                  </div>
-                )}
-                {error && <p className="text-[11px] text-destructive">{error}</p>}
-              </>
             )}
-          </CollapseCard>
+          </div>
+        </>
+      )}
+      {isAdmin && (
+        <>
+          <div className="grid gap-2 grid-cols-3 rounded-md bg-transparent shadow-none focus-within:bg-primary/15 focus-within:ring-2 focus-within:ring-primary/50 focus-within:shadow-[var(--shadow-glow-soft)] focus-within:bg-[image:var(--gradient-glow-radial)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
+            <SmallSelect
+              label=""
+              value={className}
+              onChange={setClassName}
+              placeholder="Class"
+              options={classOptions as string[]}
+            />
+            <SmallSelect
+              label=""
+              value={year}
+              onChange={setYear}
+              placeholder="Year"
+              options={Array.from({ length: 11 }, (_, i) =>
+                String(new Date().getFullYear() - 5 + i),
+              )}
+            />
+            <SmallSelect
+              label=""
+              value={term}
+              onChange={setTerm}
+              placeholder="Term"
+              options={["1st Term Assessment", "2nd Term Assessment", "3rd Term Assessment"]}
+            />
+          </div>
+          <div className="flex items-center justify-end gap-2 pt-1">
+            {settingsSaveMsg && (
+              <span className="text-[11px] font-medium text-primary">{settingsSaveMsg}</span>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  localStorage.setItem("ms.className", className);
+                  localStorage.setItem("ms.year", year);
+                  localStorage.setItem("ms.term", term);
+                  setSettingsSaveMsg("✓ Saved");
+                  setTimeout(() => setSettingsSaveMsg(""), 1800);
+                } catch {
+                  setSettingsSaveMsg("Save failed");
+                }
+              }}
+              className="rounded-lg bg-[image:var(--gradient-primary)] px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95 transition-opacity"
+            >
+              Save
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* — Subjects — */}
+      <div className="pt-2 mt-1 border-t border-border/60 flex items-center justify-between">
+        <h3 className="text-xs font-semibold text-foreground">Subjects</h3>
+        <span className="text-[10px] text-muted-foreground">{subjectList.length}</span>
+      </div>
+      {subjectList.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+          {subjectList.map((name) => (
+            <span
+              key={name}
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-secondary/60 px-2 py-0.5 text-[10px] font-medium text-secondary-foreground"
+            >
+              {name}
+              <button
+                type="button"
+                onClick={async () => {
+                  if (isTeacher) {
+                    removeSubject(name);
+                    return;
+                  }
+                  if (await requireDeletePassword(`Enter password to remove subject "${name}":`))
+                    removeSubject(name);
+                }}
+                className="text-muted-foreground hover:text-destructive"
+                aria-label={`Remove ${name}`}
+              >
+                ✕
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <form
+        className="flex gap-1.5 rounded-md bg-transparent shadow-none focus-within:bg-primary/15 focus-within:ring-2 focus-within:ring-primary/50 focus-within:shadow-[var(--shadow-glow-soft)] focus-within:bg-[image:var(--gradient-glow-radial)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+        onSubmit={(e) => {
+          e.preventDefault();
+          addSubject();
+        }}
+      >
+        <input
+          type="text"
+          value={newSubject}
+          onChange={(e) => setNewSubject(e.target.value)}
+          enterKeyHint="done"
+          placeholder="New subject"
+          className="flex-1 rounded-lg border border-input bg-background px-3 py-1.5 text-xs outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15"
+        />
+        <button
+          type="submit"
+          className="rounded-lg bg-[image:var(--gradient-primary)] px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95 transition-opacity"
+        >
+          +
+        </button>
+      </form>
+      <div className="flex items-center justify-end gap-2 pt-1">
+        {subjectsSavedMsg && (
+          <span className="text-[10px] font-medium text-primary">{subjectsSavedMsg}</span>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            if (isAdmin)
+              void persistGlobalSubjects(uniqueSubjects(DEFAULT_SUBJECTS, globalSubjects));
+            else if (isTeacher && user?.id) void persistPersonalSubjects(user.id, personalSubjects);
+            setSubjectsSavedMsg("Saved ✓");
+            window.setTimeout(() => setSubjectsSavedMsg(""), 1500);
+          }}
+          className="rounded-lg bg-[image:var(--gradient-primary)] px-4 py-1.5 text-xs font-semibold text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95 transition-opacity"
+        >
+          Save
+        </button>
+      </div>
+
+      {isAdmin && (
+        <>
+          {/* — Sample Template — */}
+          <div className="pt-2 mt-1 border-t border-border/60 flex items-center justify-between">
+            <h3 className="text-xs font-semibold text-foreground">Sample Template</h3>
+            <select
+              value={className}
+              onChange={(e) => setClassName(e.target.value)}
+              className={`rounded-lg border border-input bg-background px-2 py-1 text-[10px] outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15 ${className ? "" : "text-muted-foreground"}`}
+              title="Select class"
+            >
+              <option value="">Class</option>
+              {classOptions.map((c) => (
+                <option key={c} value={c} className="text-foreground">
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              downloadSampleExcel(subjectList, className, { exam, term, year, school: schoolName })
+            }
+            disabled={!subjectList.length || !className.trim()}
+            title={!className.trim() ? "Class সিলেক্ট করুন" : "Download sample template"}
+            className="w-full rounded-lg border border-primary/30 bg-background px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
+          >
+            ↓ Download Sample Template
+          </button>
+
+          {/* — Upload Excel — */}
+          <div className="pt-2 mt-1 border-t border-border/60">
+            <h3 className="text-xs font-semibold text-foreground mb-1.5">Upload Excel</h3>
+          </div>
+          <label className="flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border bg-secondary/30 px-3 py-5 cursor-pointer hover:bg-secondary/50 hover:border-primary/60 transition-all">
+            <span className="text-sm font-semibold text-primary">⬆ Upload Excel</span>
+            <span className="text-[10px] text-muted-foreground truncate">
+              {fileName || "Click to choose .xlsx file"}
+            </span>
+            <input type="file" accept=".xlsx,.xls" onChange={onFile} className="hidden" />
+          </label>
+          {students.length > 0 && (
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
+              ✓ {students.length} student{students.length === 1 ? "" : "s"} loaded
+            </div>
+          )}
+          {error && <p className="text-[11px] text-destructive">{error}</p>}
+        </>
+      )}
+    </CollapseCard>
   );
 
   return (
@@ -1515,12 +1787,19 @@ export function MarksheetGenerator() {
       {remoteUpdate && students.length > 0 && (
         <div className="sticky top-12 z-30 -mx-3 sm:-mx-6 mb-2 px-3 sm:px-6">
           <div className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 flex items-center justify-between gap-2 shadow-[var(--shadow-card)]">
-            <span className="text-[11px] font-medium text-foreground">🔄 অন্য ডিভাইস থেকে নতুন ডেটা এসেছে</span>
+            <span className="text-[11px] font-medium text-foreground">
+              🔄 অন্য ডিভাইস থেকে নতুন ডেটা এসেছে
+            </span>
             <button
               type="button"
-              onClick={() => { setStudents([]); setRemoteUpdate(false); }}
+              onClick={() => {
+                setStudents([]);
+                setRemoteUpdate(false);
+              }}
               className="rounded-md bg-[image:var(--gradient-primary)] px-2.5 py-1 text-[11px] font-semibold text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95"
-            >Refresh</button>
+            >
+              Refresh
+            </button>
           </div>
         </div>
       )}
@@ -1567,7 +1846,9 @@ export function MarksheetGenerator() {
             </button>
             <button
               type="button"
-              onClick={() => { void signOut(); }}
+              onClick={() => {
+                void signOut();
+              }}
               className="inline-flex items-center gap-1 rounded-lg border border-destructive/60 bg-card px-2 py-1.5 text-destructive hover:bg-destructive hover:text-destructive-foreground hover:border-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/70 focus-visible:ring-offset-1 focus-visible:ring-offset-background transition-colors"
               aria-label="Sign out of your account"
               title="Sign out"
@@ -1607,7 +1888,9 @@ export function MarksheetGenerator() {
               <CollapseCard title="Class" defaultOpen>
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] text-muted-foreground">Selected</span>
-                  <span className="text-[10px] text-muted-foreground">{classOptions.length} classes</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {classOptions.length} classes
+                  </span>
                 </div>
                 {classOptions.length === 0 ? (
                   <p className="mt-2 text-[11px] text-muted-foreground">
@@ -1642,7 +1925,9 @@ export function MarksheetGenerator() {
                     type="button"
                     disabled={!className}
                     onClick={() => {
-                      try { localStorage.setItem("ms.className", className); } catch {}
+                      try {
+                        localStorage.setItem("ms.className", className);
+                      } catch {}
                       setSettingsSaveMsg("Saved ✓");
                       window.setTimeout(() => setSettingsSaveMsg(""), 1500);
                     }}
@@ -1656,7 +1941,9 @@ export function MarksheetGenerator() {
               <CollapseCard title="Subjects">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] text-muted-foreground">Total subjects</span>
-                  <span className="text-[10px] text-muted-foreground">{subjectList.length} subjects</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {subjectList.length} subjects
+                  </span>
                 </div>
                 {subjectList.length > 0 && (
                   <div className="mt-1 flex flex-wrap gap-1.5">
@@ -1669,8 +1956,16 @@ export function MarksheetGenerator() {
                         <button
                           type="button"
                           onClick={async () => {
-                            if (isTeacher) { removeSubject(name); return; }
-                            if (await requireDeletePassword(`Enter password to remove subject "${name}":`)) removeSubject(name);
+                            if (isTeacher) {
+                              removeSubject(name);
+                              return;
+                            }
+                            if (
+                              await requireDeletePassword(
+                                `Enter password to remove subject "${name}":`,
+                              )
+                            )
+                              removeSubject(name);
                           }}
                           className="text-muted-foreground hover:text-destructive"
                           aria-label={`Remove ${name}`}
@@ -1683,7 +1978,10 @@ export function MarksheetGenerator() {
                 )}
                 <form
                   className="flex gap-1.5 mt-2"
-                  onSubmit={(e) => { e.preventDefault(); addSubject(); }}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    addSubject();
+                  }}
                 >
                   <input
                     type="text"
@@ -1708,7 +2006,8 @@ export function MarksheetGenerator() {
                     type="button"
                     onClick={() => {
                       if (isAdmin) void persistGlobalSubjects(subjectList);
-                      else if (isTeacher && user?.id) void persistPersonalSubjects(user.id, personalSubjects);
+                      else if (isTeacher && user?.id)
+                        void persistPersonalSubjects(user.id, personalSubjects);
                       setSubjectsSavedMsg("Saved ✓");
                       window.setTimeout(() => setSubjectsSavedMsg(""), 1500);
                     }}
@@ -1737,7 +2036,9 @@ export function MarksheetGenerator() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-[11px] font-medium text-foreground truncate">{label}</div>
+                          <div className="text-[11px] font-medium text-foreground truncate">
+                            {label}
+                          </div>
                           <div className="mt-1 flex items-center gap-1.5">
                             <label className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-[image:var(--gradient-primary)] px-2.5 py-1 text-[10px] font-semibold text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95 transition-opacity">
                               {sigBusy === who ? "..." : value ? "Change" : "Upload"}
@@ -1752,7 +2053,12 @@ export function MarksheetGenerator() {
                               <button
                                 type="button"
                                 onClick={async () => {
-                                  if (!(await requireDeletePassword(`Enter password to remove ${label}:`))) return;
+                                  if (
+                                    !(await requireDeletePassword(
+                                      `Enter password to remove ${label}:`,
+                                    ))
+                                  )
+                                    return;
                                   if (who === "principal") setPrincipalSig(undefined);
                                   else setTeacherSig(undefined);
                                   if (isAdmin) {
@@ -1763,7 +2069,11 @@ export function MarksheetGenerator() {
                                           : { teacherSigDataUrl: "" },
                                       );
                                     } catch (err) {
-                                      setError(err instanceof Error ? err.message : "Signature মুছা যায়নি");
+                                      setError(
+                                        err instanceof Error
+                                          ? err.message
+                                          : "Signature মুছা যায়নি",
+                                      );
                                     }
                                   }
                                 }}
@@ -1832,9 +2142,7 @@ export function MarksheetGenerator() {
           {!current ? (
             <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center space-y-3 shadow-[var(--shadow-card)]">
               <p className="text-sm text-muted-foreground">
-                {students.length === 0
-                  ? "​"
-                  : "সার্চ-এ কোনো ছাত্র মেলেনি"}
+                {students.length === 0 ? "​" : "সার্চ-এ কোনো ছাত্র মেলেনি"}
               </p>
               {students.length === 0 && (
                 <div className="flex items-center justify-center gap-2 flex-wrap">
@@ -1855,103 +2163,123 @@ export function MarksheetGenerator() {
                 </div>
               )}
             </div>
-          ) : (
-            studentSubPage === "none" ? (
-              <section
-                onTouchStart={onTouchStart}
-                onTouchEnd={onTouchEnd}
-                className="rounded-xl border border-border bg-card p-3 shadow-[var(--shadow-card)] space-y-2.5"
+          ) : studentSubPage === "none" ? (
+            <section
+              onTouchStart={onTouchStart}
+              onTouchEnd={onTouchEnd}
+              className="rounded-xl border border-border bg-card p-3 shadow-[var(--shadow-card)] space-y-2.5"
+            >
+              {/* Name header card — highlighted by default */}
+              <div className="rounded-md border border-emerald-100 bg-background px-2 py-0.5 flex items-center justify-center gap-2">
+                <p className="text-[12px] font-bold text-foreground truncate leading-tight">
+                  {current.studentName || "Unnamed"}
+                </p>
+                <span className="text-[9px] text-muted-foreground leading-tight whitespace-nowrap">
+                  Roll: {current.rollNo || "—"}
+                  {current.studentId ? ` • ID: ${current.studentId}` : ""}
+                </span>
+              </div>
+
+              {/* Two collapsed tap cards */}
+              <button
+                type="button"
+                onClick={() => {
+                  setLastStudentTab("info");
+                  setStudentSubPage("info");
+                }}
+                className="w-full rounded-xl border border-primary bg-[image:var(--gradient-primary)] text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95 px-3 py-2 flex items-center justify-between gap-2 transition-opacity"
               >
-                {/* Name header card — highlighted by default */}
-                <div className="rounded-md border border-emerald-100 bg-background px-2 py-0.5 flex items-center justify-center gap-2">
-                  <p className="text-[12px] font-bold text-foreground truncate leading-tight">
-                    {current.studentName || "Unnamed"}
-                  </p>
-                  <span className="text-[9px] text-muted-foreground leading-tight whitespace-nowrap">
-                    Roll: {current.rollNo || "—"}{current.studentId ? ` • ID: ${current.studentId}` : ""}
-                  </span>
-                </div>
+                <span className="text-[13px] font-semibold tracking-tight">Student Info</span>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLastStudentTab("subjects");
+                  setStudentSubPage("subjects");
+                }}
+                className="w-full rounded-xl border border-primary bg-[image:var(--gradient-primary)] text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95 px-3 py-2 flex items-center justify-between gap-2 transition-opacity"
+              >
+                <span className="text-[13px] font-semibold tracking-tight">Subjects</span>
+                <span className="flex items-center gap-1.5 text-[13px] font-semibold">
+                  {current.subjects.length} <ChevronRight className="h-3.5 w-3.5" />
+                </span>
+              </button>
 
-                {/* Two collapsed tap cards */}
-                <button
-                  type="button"
-                  onClick={() => { setLastStudentTab("info"); setStudentSubPage("info"); }}
-                  className="w-full rounded-xl border border-primary bg-[image:var(--gradient-primary)] text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95 px-3 py-2 flex items-center justify-between gap-2 transition-opacity"
-                >
-                  <span className="text-[13px] font-semibold tracking-tight">Student Info</span>
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setLastStudentTab("subjects"); setStudentSubPage("subjects"); }}
-                  className="w-full rounded-xl border border-primary bg-[image:var(--gradient-primary)] text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95 px-3 py-2 flex items-center justify-between gap-2 transition-opacity"
-                >
-                  <span className="text-[13px] font-semibold tracking-tight">Subjects</span>
-                  <span className="flex items-center gap-1.5 text-[13px] font-semibold">
-                    {current.subjects.length} <ChevronRight className="h-3.5 w-3.5" />
-                  </span>
-                </button>
-
-                {/* Counter only — swipe left/right to navigate */}
-                <div className="flex items-center justify-center pt-1 border-t border-border">
-                  <span className="text-[11px] font-semibold text-foreground tabular-nums">
-                    {currentIdx + 1} <span className="text-muted-foreground">/</span> {filteredStudents.length}
-                  </span>
+              {/* Counter only — swipe left/right to navigate */}
+              <div className="flex items-center justify-center pt-1 border-t border-border">
+                <span className="text-[11px] font-semibold text-foreground tabular-nums">
+                  {currentIdx + 1} <span className="text-muted-foreground">/</span>{" "}
+                  {filteredStudents.length}
+                </span>
+              </div>
+            </section>
+          ) : studentSubPage === "subjects" ? (
+            <section className="rounded-xl border border-border bg-card p-2 shadow-[var(--shadow-card)] space-y-1.5">
+              <div className="flex items-center justify-center">
+                <p className="text-base font-extrabold truncate tracking-wide bg-[image:var(--gradient-primary)] bg-clip-text text-transparent drop-shadow-[0_1px_0_rgba(0,0,0,0.15)]">
+                  {current?.studentName || "—"}
+                </p>
+              </div>
+              {current && (
+                <div className="rounded-xl border border-border bg-secondary/30 px-2.5 divide-y divide-border/60">
+                  {current.subjects.map((sub, j) => (
+                    <div
+                      key={j}
+                      className="flex items-center gap-2 py-[3px] rounded-md bg-transparent shadow-none focus-within:bg-primary/15 focus-within:ring-2 focus-within:ring-primary/50 focus-within:shadow-[var(--shadow-glow-soft)] focus-within:bg-[image:var(--gradient-glow-radial)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+                    >
+                      <span className="flex-1 text-[13px] font-extrabold truncate bg-[image:var(--gradient-primary)] bg-clip-text text-transparent">
+                        {sub.name}
+                      </span>
+                      <select
+                        value={sub.fullMarks}
+                        onChange={(e) =>
+                          updateSubjectByRef(current, j, { fullMarks: Number(e.target.value) })
+                        }
+                        className="w-12 rounded-md border border-input bg-background text-[11px] h-[28px] text-center font-semibold text-muted-foreground outline-none focus:border-primary shrink-0"
+                      >
+                        <option value={100}>100</option>
+                        <option value={50}>50</option>
+                      </select>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        max={sub.fullMarks}
+                        value={sub.obtained ?? ""}
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          if (raw === "") {
+                            updateSubjectByRef(current, j, { obtained: null });
+                            return;
+                          }
+                          const val = Number(raw);
+                          if (isNaN(val)) return;
+                          const fm = Number(sub.fullMarks);
+                          if (fm > 0 && val > fm) {
+                            toast.error(
+                              `${sub.name}: সর্বোচ্চ ${sub.fullMarks} নাম্বার বসানো যাবে`,
+                            );
+                            return;
+                          }
+                          if (val < 0) {
+                            toast.error("নাম্বার ০-এর কম হতে পারবে না");
+                            return;
+                          }
+                          updateSubjectByRef(current, j, { obtained: val });
+                        }}
+                        className="w-14 rounded-md border border-input bg-background px-1 text-[13px] h-[28px] text-center font-bold text-primary outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+                      />
+                    </div>
+                  ))}
+                  {current.subjects.length === 0 && (
+                    <p className="text-[10px] text-muted-foreground px-1 py-2">
+                      No subjects — add from Settings.
+                    </p>
+                  )}
                 </div>
-              </section>
-            ) : studentSubPage === "subjects" ? (
-              <section className="rounded-xl border border-border bg-card p-2 shadow-[var(--shadow-card)] space-y-1.5">
-                 <div className="flex items-center justify-center">
-                   <p className="text-base font-extrabold truncate tracking-wide bg-[image:var(--gradient-primary)] bg-clip-text text-transparent drop-shadow-[0_1px_0_rgba(0,0,0,0.15)]">{current?.studentName || "—"}</p>
-                 </div>
-                {current && (
-                  <div className="rounded-xl border border-border bg-secondary/30 px-2.5 divide-y divide-border/60">
-                     {current.subjects.map((sub, j) => (
-                       <div key={j} className="flex items-center gap-2 py-[3px] rounded-md bg-transparent shadow-none focus-within:bg-primary/15 focus-within:ring-2 focus-within:ring-primary/50 focus-within:shadow-[var(--shadow-glow-soft)] focus-within:bg-[image:var(--gradient-glow-radial)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
-                         <span className="flex-1 text-[13px] font-extrabold truncate bg-[image:var(--gradient-primary)] bg-clip-text text-transparent">{sub.name}</span>
-                         <select
-                           value={sub.fullMarks}
-                           onChange={(e) => updateSubjectByRef(current, j, { fullMarks: Number(e.target.value) })}
-                           className="w-12 rounded-md border border-input bg-background text-[11px] h-[28px] text-center font-semibold text-muted-foreground outline-none focus:border-primary shrink-0"
-                         >
-                           <option value={100}>100</option>
-                           <option value={50}>50</option>
-                         </select>
-                        <input
-                          type="number"
-                          inputMode="decimal"
-                          max={sub.fullMarks}
-                          value={sub.obtained ?? ""}
-                          onChange={(e) => {
-                            const raw = e.target.value;
-                            if (raw === "") {
-                              updateSubjectByRef(current, j, { obtained: null });
-                              return;
-                            }
-                            const val = Number(raw);
-                            if (isNaN(val)) return;
-                            const fm = Number(sub.fullMarks);
-                            if (fm > 0 && val > fm) {
-                              toast.error(`${sub.name}: সর্বোচ্চ ${sub.fullMarks} নাম্বার বসানো যাবে`);
-                              return;
-                            }
-                            if (val < 0) {
-                              toast.error("নাম্বার ০-এর কম হতে পারবে না");
-                              return;
-                            }
-                            updateSubjectByRef(current, j, { obtained: val });
-                          }}
-                          className="w-14 rounded-md border border-input bg-background px-1 text-[13px] h-[28px] text-center font-bold text-primary outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
-                        />
-                      </div>
-                    ))}
-                    {current.subjects.length === 0 && (
-                      <p className="text-[10px] text-muted-foreground px-1 py-2">No subjects — add from Settings.</p>
-                    )}
-                  </div>
-                )}
-              </section>
-            ) : (
+              )}
+            </section>
+          ) : (
             <section
               onTouchStart={onTouchStart}
               onTouchEnd={onTouchEnd}
@@ -2002,12 +2330,38 @@ export function MarksheetGenerator() {
 
               {/* Info rows */}
               <div className="rounded-xl border border-border bg-secondary/30 px-3 py-0.5 divide-y divide-border/60">
-                <ProfileRow label="Roll" value={current.rollNo} numeric onChange={(v) => updateStudentByRef(current, { rollNo: v })} />
-                <ProfileRow label="Student ID" value={current.studentId} numeric onChange={(v) => updateStudentByRef(current, { studentId: v })} />
-                <ProfileRow label="Fathers Name" value={current.fatherName} onChange={(v) => updateStudentByRef(current, { fatherName: v })} />
-                <ProfileRow label="Present" value={current.totalPresent} onChange={(v) => updateStudentByRef(current, { totalPresent: v })} />
-                <ProfileRow label="Co-Curricular Activities" value={current.coCurricular} onChange={(v) => updateStudentByRef(current, { coCurricular: v })} />
-                <ProfileRow label="Comments" value={current.comments} onChange={(v) => updateStudentByRef(current, { comments: v })} />
+                <ProfileRow
+                  label="Roll"
+                  value={current.rollNo}
+                  numeric
+                  onChange={(v) => updateStudentByRef(current, { rollNo: v })}
+                />
+                <ProfileRow
+                  label="Student ID"
+                  value={current.studentId}
+                  numeric
+                  onChange={(v) => updateStudentByRef(current, { studentId: v })}
+                />
+                <ProfileRow
+                  label="Fathers Name"
+                  value={current.fatherName}
+                  onChange={(v) => updateStudentByRef(current, { fatherName: v })}
+                />
+                <ProfileRow
+                  label="Present"
+                  value={current.totalPresent}
+                  onChange={(v) => updateStudentByRef(current, { totalPresent: v })}
+                />
+                <ProfileRow
+                  label="Co-Curricular Activities"
+                  value={current.coCurricular}
+                  onChange={(v) => updateStudentByRef(current, { coCurricular: v })}
+                />
+                <ProfileRow
+                  label="Comments"
+                  value={current.comments}
+                  onChange={(v) => updateStudentByRef(current, { comments: v })}
+                />
               </div>
 
               {/* Term tabs (tap to switch active term) + Class */}
@@ -2039,11 +2393,18 @@ export function MarksheetGenerator() {
                   })}
                 </div>
                 <div className="rounded-xl border border-border bg-secondary/30 px-3 py-1 flex items-center justify-between gap-2">
-                  <span className="text-[12px] uppercase tracking-wide text-muted-foreground">Class</span>
-                  <span className="text-[13px] font-semibold text-foreground truncate">{current.className || className || "—"}</span>
+                  <span className="text-[12px] uppercase tracking-wide text-muted-foreground">
+                    Class
+                  </span>
+                  <span className="text-[13px] font-semibold text-foreground truncate">
+                    {current.className || className || "—"}
+                  </span>
                 </div>
               </div>
-              <MoralRow value={current.moralBehavior} onChange={(v) => updateStudentByRef(current, { moralBehavior: v })} />
+              <MoralRow
+                value={current.moralBehavior}
+                onChange={(v) => updateStudentByRef(current, { moralBehavior: v })}
+              />
 
               {/* Subjects — open as a separate page */}
               <button
@@ -2059,18 +2420,21 @@ export function MarksheetGenerator() {
               {saveMsg && <p className="text-[10px] text-primary font-medium">{saveMsg}</p>}
               {busy && progress.total > 1 && (
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-                  <div className="h-full bg-[image:var(--gradient-primary)] transition-all" style={{ width: `${pct}%` }} />
+                  <div
+                    className="h-full bg-[image:var(--gradient-primary)] transition-all"
+                    style={{ width: `${pct}%` }}
+                  />
                 </div>
               )}
               {error && <p className="text-[10px] text-destructive">{error}</p>}
 
               <div className="flex items-center justify-center pt-1 border-t border-border">
                 <span className="text-[12px] font-semibold text-foreground tabular-nums">
-                  {currentIdx + 1} <span className="text-muted-foreground">/</span> {filteredStudents.length}
+                  {currentIdx + 1} <span className="text-muted-foreground">/</span>{" "}
+                  {filteredStudents.length}
                 </span>
               </div>
             </section>
-            )
           )}
           {/* Sticky action bar — always visible at bottom of student tab */}
           <div className="sticky bottom-0 left-0 right-0 z-20 -mx-3 px-3 pt-1.5 pb-2 bg-background/95 backdrop-blur border-t border-border">
@@ -2096,59 +2460,73 @@ export function MarksheetGenerator() {
                 </button>
               </div>
             ) : (
-            <>
-            {studentSubPage !== "subjects" && (
               <>
-                <div className="grid grid-cols-2 gap-1.5">
+                {studentSubPage !== "subjects" && (
+                  <>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={onGenerateMarksheetWithOptions}
+                        disabled={busy}
+                        className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-900 px-3 py-1.5 text-[11px] font-semibold transition-all hover:bg-emerald-100 active:translate-y-px disabled:opacity-50"
+                      >
+                        <FileText className="h-3.5 w-3.5" /> <span>Marksheet</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={onGenerateCertificate}
+                        disabled={busy}
+                        className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-900 px-3 py-1.5 text-[11px] font-semibold transition-all hover:bg-emerald-100 active:translate-y-px disabled:opacity-50"
+                      >
+                        <Award className="h-3.5 w-3.5" /> <span>Certificate</span>
+                      </button>
+                    </div>
+                    <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+                      <ActionBtn
+                        icon={<Printer className="h-3.5 w-3.5" />}
+                        label="PDF"
+                        onClick={onGenerateCurrent}
+                        disabled={busy}
+                      />
+                      <ActionBtn
+                        icon={<Save className="h-3.5 w-3.5" />}
+                        label="Save"
+                        onClick={onSaveCurrent}
+                        disabled={busy}
+                      />
+                      <ActionBtn
+                        icon={<Printer className="h-3.5 w-3.5" />}
+                        label={
+                          busy && progress.total > 1 ? `${pct}%` : `Print All ${students.length}`
+                        }
+                        onClick={onGenerateAll}
+                        disabled={busy}
+                      />
+                    </div>
+                  </>
+                )}
+                <div
+                  className={`${studentSubPage === "subjects" ? "" : "mt-1.5"} grid grid-cols-2 items-center gap-2`}
+                >
                   <button
                     type="button"
-                    onClick={onGenerateMarksheetWithOptions}
+                    onClick={onPreviewCurrent}
                     disabled={busy}
-                    className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-900 px-3 py-1.5 text-[11px] font-semibold transition-all hover:bg-emerald-100 active:translate-y-px disabled:opacity-50"
+                    className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-emerald-100 bg-background text-foreground px-3 py-1.5 text-[11px] font-semibold transition-all hover:bg-emerald-50 active:translate-y-px disabled:opacity-50"
                   >
-                    <FileText className="h-3.5 w-3.5" /> <span>Marksheet</span>
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>View</span>
                   </button>
                   <button
                     type="button"
-                    onClick={onGenerateCertificate}
+                    onClick={() => setTab("view")}
                     disabled={busy}
-                    className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-900 px-3 py-1.5 text-[11px] font-semibold transition-all hover:bg-emerald-100 active:translate-y-px disabled:opacity-50"
+                    className="w-full inline-flex items-center justify-center gap-1 rounded-lg bg-[image:var(--gradient-primary)] px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95 transition-opacity disabled:opacity-50"
                   >
-                    <Award className="h-3.5 w-3.5" /> <span>Certificate</span>
+                    <Plus className="h-3.5 w-3.5" /> Create
                   </button>
-                </div>
-                <div className="mt-1.5 grid grid-cols-3 gap-1.5">
-                  <ActionBtn icon={<Printer className="h-3.5 w-3.5" />} label="PDF" onClick={onGenerateCurrent} disabled={busy} />
-                  <ActionBtn icon={<Save className="h-3.5 w-3.5" />} label="Save" onClick={onSaveCurrent} disabled={busy} />
-                  <ActionBtn
-                    icon={<Printer className="h-3.5 w-3.5" />}
-                    label={busy && progress.total > 1 ? `${pct}%` : `Print All ${students.length}`}
-                    onClick={onGenerateAll}
-                    disabled={busy}
-                  />
                 </div>
               </>
-            )}
-            <div className={`${studentSubPage === "subjects" ? "" : "mt-1.5"} grid grid-cols-2 items-center gap-2`}>
-              <button
-                type="button"
-                onClick={onPreviewCurrent}
-                disabled={busy}
-                className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-emerald-100 bg-background text-foreground px-3 py-1.5 text-[11px] font-semibold transition-all hover:bg-emerald-50 active:translate-y-px disabled:opacity-50"
-              >
-                <Eye className="h-3.5 w-3.5" />
-                <span>View</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setTab("view")}
-                disabled={busy}
-                className="w-full inline-flex items-center justify-center gap-1 rounded-lg bg-[image:var(--gradient-primary)] px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95 transition-opacity disabled:opacity-50"
-              >
-                <Plus className="h-3.5 w-3.5" /> Create
-              </button>
-            </div>
-            </>
             )}
           </div>
         </>
@@ -2157,119 +2535,156 @@ export function MarksheetGenerator() {
       {/* VIEW TAB — list of all students */}
       {tab === "view" && (
         <>
-        <ViewTab
-          students={students}
-          filteredStudents={filteredStudents}
-          subjectList={subjectList}
-          classOptions={classOptions as string[]}
-          mode={viewMode}
-          setMode={setViewMode}
-          subject={viewSubject}
-          setSubject={setViewSubject}
-          grade={viewGrade}
-          setGrade={setViewGrade}
-          klass={viewClass}
-          setKlass={setViewClass}
-          onPick={(s) => {
-            const idx = students.indexOf(s);
-            if (idx >= 0) {
-              setCurrentIdx(idx);
-              setTab("home");
-            }
-          }}
-          onPrintAll={onGenerateAllThree}
-          busyPrintAll={busy}
-          defaultClass={className}
-          defaultYear={year}
-          defaultTerm={term}
-          onCreate={async (newStudent) => {
-            // Append to local list and persist immediately
-            setStudents((prev) => [...prev, newStudent]);
-            try {
-              const rows = newStudent.subjects.map((sub) => ({
-                student_name: newStudent.studentName || "",
-                father_name: newStudent.fatherName || null,
-                mother_name: newStudent.motherName || null,
-                student_id: newStudent.studentId || "",
-                class_name: newStudent.className || className || classOptions[0] || "",
-                roll_no: newStudent.rollNo || "",
-                exam: newStudent.exam || "",
-                year_session: newStudent.year || "",
-                subject: sub.name,
-                full_marks: sub.fullMarks ?? null,
-                highest_score: sub.highestScore ?? null,
-                obtained_marks: sub.obtained ?? null,
-                letter_grade:
-                  sub.obtained != null && sub.fullMarks
-                    ? getGrade((sub.obtained / sub.fullMarks) * 100).grade
-                    : null,
-                gp:
-                  sub.obtained != null && sub.fullMarks
-                    ? getGrade((sub.obtained / sub.fullMarks) * 100).gp
-                    : null,
-                gpa: newStudent.gpa ?? null,
-              }));
-              if (rows.length) {
-                await supabase
-                  .from("marksheet_records")
-                  .upsert(rows, { onConflict: "student_id,roll_no,class_name,year_session,exam,subject" });
+          <ViewTab
+            students={students}
+            filteredStudents={filteredStudents}
+            subjectList={subjectList}
+            classOptions={classOptions as string[]}
+            mode={viewMode}
+            setMode={setViewMode}
+            subject={viewSubject}
+            setSubject={setViewSubject}
+            grade={viewGrade}
+            setGrade={setViewGrade}
+            klass={viewClass}
+            setKlass={setViewClass}
+            onPick={(s) => {
+              const idx = students.indexOf(s);
+              if (idx >= 0) {
+                setCurrentIdx(idx);
+                setTab("home");
               }
-            } catch (err) {
-              setError(err instanceof Error ? err.message : "Create failed");
-            }
-          }}
-          onDelete={async (s) => {
-            if (!(await requireDeletePassword(`Enter password to delete "${s.studentName || "Student"}":`))) return;
-            const ok = await confirmDialog({
-              title: "Delete student",
-              message: `Delete "${s.studentName || "this student"}" permanently? This cannot be undone.`,
-              confirmText: "Delete",
-              destructive: true,
-            });
-            if (!ok) return;
-            if (s.studentId || s.rollNo) {
+            }}
+            onPrintAll={onGenerateAllThree}
+            busyPrintAll={busy}
+            defaultClass={className}
+            defaultYear={year}
+            defaultTerm={term}
+            onCreate={async (newStudent) => {
+              // Append to local list and persist immediately
+              setStudents((prev) => [...prev, newStudent]);
               try {
-                let q = supabase.from("marksheet_records").delete().eq("class_name", s.className || "");
-                if (s.studentId) q = q.eq("student_id", s.studentId);
-                if (s.rollNo) q = q.eq("roll_no", s.rollNo);
-                if (s.year) q = q.eq("year_session", s.year);
-                await q;
-              } catch { /* non-fatal */ }
-            }
-            setStudents((prev) => {
-              const hasIdentity = Boolean(s.studentId || s.rollNo);
-              const next = prev.filter((x) => {
-                if (x === s) return false;
-                if (!hasIdentity) return true;
-                if ((x.className || "") !== (s.className || "")) return true;
-                if (s.studentId && x.studentId !== s.studentId) return true;
-                if (s.rollNo && x.rollNo !== s.rollNo) return true;
-                return false;
+                const rows = newStudent.subjects.map((sub) => ({
+                  student_name: newStudent.studentName || "",
+                  father_name: newStudent.fatherName || null,
+                  mother_name: newStudent.motherName || null,
+                  student_id: newStudent.studentId || "",
+                  class_name: newStudent.className || className || classOptions[0] || "",
+                  roll_no: newStudent.rollNo || "",
+                  exam: newStudent.exam || "",
+                  year_session: newStudent.year || "",
+                  subject: sub.name,
+                  full_marks: sub.fullMarks ?? null,
+                  highest_score: sub.highestScore ?? null,
+                  obtained_marks: sub.obtained ?? null,
+                  letter_grade:
+                    sub.obtained != null && sub.fullMarks
+                      ? getGrade((sub.obtained / sub.fullMarks) * 100).grade
+                      : null,
+                  gp:
+                    sub.obtained != null && sub.fullMarks
+                      ? getGrade((sub.obtained / sub.fullMarks) * 100).gp
+                      : null,
+                  gpa: newStudent.gpa ?? null,
+                }));
+                if (rows.length) {
+                  await supabase.from("marksheet_records").upsert(rows, {
+                    onConflict: "student_id,roll_no,class_name,year_session,exam,subject",
+                  });
+                }
+              } catch (err) {
+                setError(err instanceof Error ? err.message : "Create failed");
+              }
+            }}
+            onDelete={async (s) => {
+              if (
+                !(await requireDeletePassword(
+                  `Enter password to delete "${s.studentName || "Student"}":`,
+                ))
+              )
+                return;
+              const ok = await confirmDialog({
+                title: "Delete student",
+                message: `Delete "${s.studentName || "this student"}" permanently? This cannot be undone.`,
+                confirmText: "Delete",
+                destructive: true,
               });
-              if (prev.length > 0 && next.length === 0) skipNextAutoLoadRef.current = true;
-              return next;
-            });
-          }}
-        />
+              if (!ok) return;
+              if (s.studentId || s.rollNo) {
+                try {
+                  let q = supabase
+                    .from("marksheet_records")
+                    .delete()
+                    .eq("class_name", s.className || "");
+                  if (s.studentId) q = q.eq("student_id", s.studentId);
+                  if (s.rollNo) q = q.eq("roll_no", s.rollNo);
+                  if (s.year) q = q.eq("year_session", s.year);
+                  await q;
+                } catch {
+                  /* non-fatal */
+                }
+              }
+              setStudents((prev) => {
+                const hasIdentity = Boolean(s.studentId || s.rollNo);
+                const next = prev.filter((x) => {
+                  if (x === s) return false;
+                  if (!hasIdentity) return true;
+                  if ((x.className || "") !== (s.className || "")) return true;
+                  if (s.studentId && x.studentId !== s.studentId) return true;
+                  if (s.rollNo && x.rollNo !== s.rollNo) return true;
+                  return false;
+                });
+                if (prev.length > 0 && next.length === 0) skipNextAutoLoadRef.current = true;
+                return next;
+              });
+            }}
+          />
         </>
       )}
 
       {/* Footer nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md supports-[backdrop-filter]:bg-card/80 shadow-[0_-2px_12px_-4px_oklch(0.20_0.04_150_/_0.10)]">
         <div className="mx-auto flex max-w-4xl flex-nowrap items-center justify-between gap-2 px-6 sm:px-12 py-1">
-          <FooterBtn icon={<Eye className="h-[18px] w-[18px]" />} label="Edit" active={tab === "home"} onClick={() => setTab("home")} />
-          <FooterBtn icon={<Home className="h-[18px] w-[18px]" />} label="Home" active={tab === "view"} onClick={() => setTab("view")} />
-          <FooterBtn icon={<Settings className="h-[18px] w-[18px]" />} label="Settings" active={tab === "settings"} onClick={() => setTab("settings")} />
+          <FooterBtn
+            icon={<Eye className="h-[18px] w-[18px]" />}
+            label="Edit"
+            active={tab === "home"}
+            onClick={() => setTab("home")}
+          />
+          <FooterBtn
+            icon={<Home className="h-[18px] w-[18px]" />}
+            label="Home"
+            active={tab === "view"}
+            onClick={() => setTab("view")}
+          />
+          <FooterBtn
+            icon={<Settings className="h-[18px] w-[18px]" />}
+            label="Settings"
+            active={tab === "settings"}
+            onClick={() => setTab("settings")}
+          />
         </div>
       </nav>
     </div>
   );
 }
 
-function CollapseCard({ title, badge, defaultOpen = false, children }: { title: string; badge?: string; defaultOpen?: boolean; children: React.ReactNode }) {
+function CollapseCard({
+  title,
+  badge,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  badge?: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <section className={`rounded-xl border overflow-visible transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${open ? "border-primary glow-expanded" : "border-border bg-card shadow-[var(--shadow-card)]"}`}>
+    <section
+      className={`rounded-xl border overflow-visible transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${open ? "border-primary glow-expanded" : "border-border bg-card shadow-[var(--shadow-card)]"}`}
+    >
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -2281,13 +2696,25 @@ function CollapseCard({ title, badge, defaultOpen = false, children }: { title: 
         aria-expanded={open}
       >
         <div className="flex items-center gap-2">
-          <span className={`h-1.5 w-1.5 rounded-full ${open ? "bg-primary-foreground" : "bg-primary"}`} />
-          <h2 className={`text-[11px] font-semibold uppercase tracking-wider ${open ? "text-primary-foreground" : "text-muted-foreground"}`}>{title}</h2>
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${open ? "bg-primary-foreground" : "bg-primary"}`}
+          />
+          <h2
+            className={`text-[11px] font-semibold uppercase tracking-wider ${open ? "text-primary-foreground" : "text-muted-foreground"}`}
+          >
+            {title}
+          </h2>
           {badge != null && (
-            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${open ? "bg-primary-foreground/20 text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>{badge}</span>
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${open ? "bg-primary-foreground/20 text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+            >
+              {badge}
+            </span>
           )}
         </div>
-        <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180 text-primary-foreground" : "text-muted-foreground"}`} />
+        <ChevronDown
+          className={`h-4 w-4 transition-transform ${open ? "rotate-180 text-primary-foreground" : "text-muted-foreground"}`}
+        />
       </button>
       {open && <div className="px-3 pb-3 pt-0 space-y-2.5">{children}</div>}
     </section>
@@ -2309,11 +2736,18 @@ function DeletePasswordBody() {
 
   function save() {
     setMsg("");
-    if (pw.length < 4) { setMsg("কমপক্ষে ৪ অক্ষর দিন"); return; }
-    if (pw !== pw2) { setMsg("দুটি পাসওয়াড মিলছে না"); return; }
+    if (pw.length < 4) {
+      setMsg("কমপক্ষে ৪ অক্ষর দিন");
+      return;
+    }
+    if (pw !== pw2) {
+      setMsg("দুটি পাসওয়াড মিলছে না");
+      return;
+    }
     setDeletePasswordValue(pw);
     setCurrent(pw);
-    setPw(""); setPw2("");
+    setPw("");
+    setPw2("");
     setMsg("✓ পাসওয়াড সেট হয়েছে");
   }
   async function clear() {
@@ -2380,7 +2814,9 @@ function DeletePasswordBody() {
         </button>
         <div className="inline-flex items-center gap-1.5 rounded-lg border border-input bg-background px-2 py-1">
           <span className="text-[10px] font-medium text-foreground">Mobile Role</span>
-          <span className={`text-[9px] font-semibold ${mobileRoleOn ? "text-primary" : "text-muted-foreground"}`}>
+          <span
+            className={`text-[9px] font-semibold ${mobileRoleOn ? "text-primary" : "text-muted-foreground"}`}
+          >
             {mobileRoleOn ? "ON" : "OFF"}
           </span>
           <button
@@ -2431,8 +2867,14 @@ function MyLoginPasswordBody() {
 
   async function save() {
     setMsg("");
-    if (pw.length < 6) { setMsg("কমপক্ষে ৬ অক্ষর দিন"); return; }
-    if (pw !== pw2) { setMsg("দুটি পাসওয়াড মিলছে না"); return; }
+    if (pw.length < 6) {
+      setMsg("কমপক্ষে ৬ অক্ষর দিন");
+      return;
+    }
+    if (pw !== pw2) {
+      setMsg("দুটি পাসওয়াড মিলছে না");
+      return;
+    }
     setBusy(true);
     try {
       const { data: u } = await supabase.auth.getUser();
@@ -2444,7 +2886,8 @@ function MyLoginPasswordBody() {
         .upsert({ user_id: u.user.id, password: pw }, { onConflict: "user_id" });
       if (tErr) throw new Error(tErr.message);
       setStored(pw);
-      setPw(""); setPw2("");
+      setPw("");
+      setPw2("");
       setMsg("✓ পাসওয়াড আপডেট হয়েছে");
     } catch (e) {
       setMsg(e instanceof Error ? e.message : String(e));
@@ -2458,7 +2901,15 @@ function MyLoginPasswordBody() {
       <div className="flex items-center gap-2">
         <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Current</span>
         <code className="flex-1 truncate rounded bg-secondary/60 px-2 py-1 text-[11px] font-mono">
-          {stored ? (shown ? stored : "•".repeat(Math.min(10, stored.length))) : <span className="italic text-muted-foreground">not stored</span>}
+          {stored ? (
+            shown ? (
+              stored
+            ) : (
+              "•".repeat(Math.min(10, stored.length))
+            )
+          ) : (
+            <span className="italic text-muted-foreground">not stored</span>
+          )}
         </code>
         {stored && (
           <button
@@ -2503,7 +2954,17 @@ function MyLoginPasswordBody() {
   );
 }
 
-function FooterBtn({ icon, label, active, onClick }: { icon: React.ReactNode; label: string; active: boolean; onClick: () => void }) {
+function FooterBtn({
+  icon,
+  label,
+  active,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
@@ -2522,7 +2983,17 @@ function FooterBtn({ icon, label, active, onClick }: { icon: React.ReactNode; la
   );
 }
 
-function ProfileRow({ label, value, onChange, numeric }: { label: string; value: string; onChange: (v: string) => void; numeric?: boolean }) {
+function ProfileRow({
+  label,
+  value,
+  onChange,
+  numeric,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  numeric?: boolean;
+}) {
   return (
     <div data-row className="flex items-center gap-2 px-2 -mx-2 py-1 rounded-md">
       <span className="text-[13px] font-semibold text-foreground shrink-0 w-28">{label}</span>
@@ -2540,7 +3011,15 @@ function ProfileRow({ label, value, onChange, numeric }: { label: string; value:
   );
 }
 
-function PillRow({ label, value, tone = "default" }: { label: string; value: string; tone?: "default" | "success" | "info" | "warn" }) {
+function PillRow({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "success" | "info" | "warn";
+}) {
   const toneCls =
     tone === "success"
       ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/30 dark:text-emerald-400"
@@ -2552,7 +3031,9 @@ function PillRow({ label, value, tone = "default" }: { label: string; value: str
   return (
     <div className="flex items-center justify-between rounded-2xl border border-border bg-secondary/30 px-4 py-2.5">
       <span className="text-xs font-bold text-foreground">{label}</span>
-      <span className={`rounded-full border px-3 py-0.5 text-[11px] font-semibold ${toneCls}`}>{value}</span>
+      <span className={`rounded-full border px-3 py-0.5 text-[11px] font-semibold ${toneCls}`}>
+        {value}
+      </span>
     </div>
   );
 }
@@ -2569,14 +3050,28 @@ function MoralRow({ value, onChange }: { value: string; onChange: (v: string) =>
       >
         <option value="">—</option>
         {options.map((o) => (
-          <option key={o} value={o} className="text-foreground bg-background">{o}</option>
+          <option key={o} value={o} className="text-foreground bg-background">
+            {o}
+          </option>
         ))}
       </select>
     </div>
   );
 }
 
-function ActionBtn({ icon, label, onClick, disabled, primary }: { icon: React.ReactNode; label: string; onClick: () => void; disabled?: boolean; primary?: boolean }) {
+function ActionBtn({
+  icon,
+  label,
+  onClick,
+  disabled,
+  primary,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  primary?: boolean;
+}) {
   return (
     <button
       type="button"
@@ -2594,10 +3089,22 @@ function ActionBtn({ icon, label, onClick, disabled, primary }: { icon: React.Re
   );
 }
 
-function SmallField({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
+function SmallField({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
   return (
     <label className="block">
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
       <input
         type="text"
         value={value}
@@ -2743,7 +3250,13 @@ function ViewTab({
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {m === "all" ? "All" : m === "byClass" ? "By Class" : m === "topSubject" ? "Top / Subject" : "By Grade"}
+            {m === "all"
+              ? "All"
+              : m === "byClass"
+                ? "By Class"
+                : m === "topSubject"
+                  ? "Top / Subject"
+                  : "By Grade"}
           </button>
         ))}
       </div>
@@ -2756,7 +3269,9 @@ function ViewTab({
         >
           <option value="">Select class…</option>
           {classOptions.map((c) => (
-            <option key={c} value={c}>Class {c}</option>
+            <option key={c} value={c}>
+              Class {c}
+            </option>
           ))}
         </select>
       )}
@@ -2769,7 +3284,9 @@ function ViewTab({
         >
           <option value="">Select subject…</option>
           {subjectList.map((n) => (
-            <option key={n} value={n}>{n}</option>
+            <option key={n} value={n}>
+              {n}
+            </option>
           ))}
         </select>
       )}
@@ -2841,7 +3358,9 @@ function ViewTab({
                     {(s.studentName || "?").trim().charAt(0).toUpperCase()}
                   </span>
                   <div className="min-w-0">
-                    <p className="text-[12px] font-semibold text-foreground truncate leading-tight">{s.studentName || "—"}</p>
+                    <p className="text-[12px] font-semibold text-foreground truncate leading-tight">
+                      {s.studentName || "—"}
+                    </p>
                     <p className="text-[10px] text-muted-foreground truncate leading-tight">
                       Class {s.className || "—"} · Roll {s.rollNo || "—"}
                       {s.exam ? ` · ${s.exam}` : ""}
@@ -2866,7 +3385,9 @@ function ViewTab({
       <div className="fixed inset-x-4 bottom-[76px] z-40 pointer-events-none flex h-9 items-center justify-between">
         <button
           type="button"
-          onClick={() => { void onPrintAll(); }}
+          onClick={() => {
+            void onPrintAll();
+          }}
           disabled={busyPrintAll || students.length === 0}
           className="pointer-events-auto inline-flex h-9 w-24 shrink-0 items-center justify-center gap-1.5 rounded-full bg-emerald-700 px-4 text-xs font-semibold leading-none text-white shadow-[var(--shadow-primary)] hover:bg-emerald-800 disabled:opacity-50"
         >
@@ -2928,7 +3449,8 @@ function CreateStudentModal({
   }, [defaultClass]);
   const [marks, setMarks] = useState<Record<string, { full: string; obt: string }>>(() => {
     const m: Record<string, { full: string; obt: string }> = {};
-    for (const n of subjectList) m[n] = { full: String(resolveFullMarks(n, defaultClass)), obt: "" };
+    for (const n of subjectList)
+      m[n] = { full: String(resolveFullMarks(n, defaultClass)), obt: "" };
     return m;
   });
   const [busy, setBusy] = useState(false);
@@ -2953,7 +3475,6 @@ function CreateStudentModal({
       }
       return next;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [klass, subjectList]);
 
   // Mobile/browser Back button → close dialog instead of leaving the page
@@ -2964,7 +3485,10 @@ function CreateStudentModal({
     return () => {
       window.removeEventListener("popstate", onPop);
       if (savedTimerRef.current != null) window.clearTimeout(savedTimerRef.current);
-      if (window.history.state && (window.history.state as { newStudentDialog?: boolean } | null)?.newStudentDialog) {
+      if (
+        window.history.state &&
+        (window.history.state as { newStudentDialog?: boolean } | null)?.newStudentDialog
+      ) {
         window.history.back();
       }
     };
@@ -2973,15 +3497,22 @@ function CreateStudentModal({
   async function submit() {
     // Collect ALL missing required fields
     const missing: { label: string; focus: () => void }[] = [];
-    if (!studentName.trim()) missing.push({ label: "Student name", focus: () => nameInputRef.current?.focus() });
-    if (!fatherName.trim()) missing.push({ label: "Father's name", focus: () => fatherInputRef.current?.focus() });
-    if (!motherName.trim()) missing.push({ label: "Mother's name", focus: () => motherInputRef.current?.focus() });
-    if (!studentId.trim()) missing.push({ label: "Student ID", focus: () => studentIdInputRef.current?.focus() });
+    if (!studentName.trim())
+      missing.push({ label: "Student name", focus: () => nameInputRef.current?.focus() });
+    if (!fatherName.trim())
+      missing.push({ label: "Father's name", focus: () => fatherInputRef.current?.focus() });
+    if (!motherName.trim())
+      missing.push({ label: "Mother's name", focus: () => motherInputRef.current?.focus() });
+    if (!studentId.trim())
+      missing.push({ label: "Student ID", focus: () => studentIdInputRef.current?.focus() });
     if (!rollNo.trim()) missing.push({ label: "Roll", focus: () => rollInputRef.current?.focus() });
     for (const name of subjectList) {
       const m = marks[name] || { full: "", obt: "" };
       if (String(m.obt).trim() === "") {
-        missing.push({ label: `${name} (Obt)`, focus: () => subjectInputRefs.current[name]?.focus() });
+        missing.push({
+          label: `${name} (Obt)`,
+          focus: () => subjectInputRefs.current[name]?.focus(),
+        });
       }
     }
     if (!klass.trim()) {
@@ -3002,7 +3533,7 @@ function CreateStudentModal({
       const subjects: SubjectMark[] = subjectList.map((name) => {
         const def = resolveFullMarks(name, klass);
         const m = marks[name] || { full: String(def), obt: "" };
-        const full = isElementaryClass(klass) ? 50 : (Number(m.full) || def);
+        const full = isElementaryClass(klass) ? 50 : Number(m.full) || def;
         const obt = m.obt === "" ? null : Number(m.obt);
         const pct = obt != null && full ? (obt / full) * 100 : null;
         const g = pct != null ? getGrade(pct) : null;
@@ -3058,90 +3589,151 @@ function CreateStudentModal({
   }
 
   return (
-    <div data-modal-lock-refresh="true" className="fixed inset-0 z-[80] flex items-start justify-center overflow-hidden overscroll-contain bg-black/40 backdrop-blur-sm px-3 pt-2 pb-3" onClick={onClose}>
+    <div
+      data-modal-lock-refresh="true"
+      className="fixed inset-0 z-[80] flex items-start justify-center overflow-hidden overscroll-contain bg-black/40 backdrop-blur-sm px-3 pt-2 pb-3"
+      onClick={onClose}
+    >
       <div
         className="w-full max-w-md max-h-[96vh] flex flex-col rounded-xl border border-border bg-card shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-3 pt-1.5 pb-1.5 border-b border-border">
           <h3 className="text-[13px] font-semibold text-foreground">New Student</h3>
-          <button onClick={onClose} className="rounded p-1 hover:bg-secondary"><X className="h-4 w-4" /></button>
+          <button onClick={onClose} className="rounded p-1 hover:bg-secondary">
+            <X className="h-4 w-4" />
+          </button>
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto px-3 py-1.5 space-y-1.5">
-        <div className="grid grid-cols-2 gap-1.5">
-          <input ref={nameInputRef} autoFocus value={studentName} onChange={(e) => setStudentName(e.target.value)} placeholder="Student name *" className="col-span-2 rounded-lg border border-input bg-background px-2 py-1 text-[12px] outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" />
-          <input ref={fatherInputRef} value={fatherName} onChange={(e) => setFatherName(e.target.value)} placeholder="Father's name *" className="rounded-lg border border-input bg-background px-2 py-1 text-[12px] outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" />
-          <input ref={motherInputRef} value={motherName} onChange={(e) => setMotherName(e.target.value)} placeholder="Mother's name *" className="rounded-lg border border-input bg-background px-2 py-1 text-[12px] outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" />
-          <input ref={studentIdInputRef} inputMode="numeric" pattern="[0-9]*" value={studentId} onChange={(e) => setStudentId(e.target.value.replace(/[^0-9]/g, ""))} placeholder="Student ID *" className="rounded-lg border border-input bg-background px-2 py-1 text-[12px] outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" />
-          <input ref={rollInputRef} inputMode="numeric" pattern="[0-9]*" value={rollNo} onChange={(e) => setRollNo(e.target.value.replace(/[^0-9]/g, ""))} placeholder="Roll *" className="rounded-lg border border-input bg-background px-2 py-1 text-[12px] outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" />
-        </div>
-
-        <div className="space-y-1">
-          {subjectList.length === 0 && <p className="text-[12px] text-muted-foreground">Set subject list from Settings first.</p>}
-          {subjectList.map((name, idx) => {
-            const m = marks[name] || { full: "100", obt: "" };
-            const isLast = idx === subjectList.length - 1;
-            return (
-              <div key={name} className="grid grid-cols-[1fr_auto_auto] items-center gap-2 rounded-md bg-transparent shadow-none focus-within:bg-primary/15 focus-within:ring-2 focus-within:ring-primary/50 focus-within:shadow-[var(--shadow-glow-soft)] focus-within:bg-[image:var(--gradient-glow-radial)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
-                <span className="text-[12px] font-medium text-foreground truncate">{name}</span>
-                <input
-                  inputMode="numeric"
-                  value={m.full}
-                  disabled
-                  tabIndex={-1}
-                  aria-label={`${name} full marks`}
-                  placeholder="Full"
-                  className="w-[56px] cursor-not-allowed rounded-md border border-input bg-secondary/60 px-1 py-0.5 text-[12px] text-center font-semibold text-muted-foreground opacity-100 outline-none"
-                />
-                <input
-                  inputMode="numeric"
-                  value={m.obt}
-                  ref={(el) => { subjectInputRefs.current[name] = el; }}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    if (raw !== "") {
-                      const val = Number(raw);
-                      const full = Number(m.full);
-                      if (!isNaN(val) && full > 0 && val > full) {
-                        toast.error(`${name}: সর্বোচ্চ ${full} নাম্বার বসানো যাবে`);
-                        return;
-                      }
-                      if (!isNaN(val) && val < 0) {
-                        toast.error("নাম্বার ০-এর কম হতে পারবে না");
-                        return;
-                      }
-                    }
-                    setMarks((p) => ({ ...p, [name]: { ...p[name], obt: raw } }));
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && isLast && !busy) {
-                      e.preventDefault();
-                      (e.currentTarget as HTMLInputElement).blur();
-                      void submit();
-                    }
-                  }}
-                  placeholder="Obt *"
-                  max={m.full}
-                  className="w-[56px] rounded-md border border-input bg-background px-1 py-0.5 text-[12px] text-center outline-none focus:border-primary"
-                />
-              </div>
-            );
-          })}
-        </div>
-
-        {missingFields.length > 0 && (
-          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1.5">
-            <p className="text-[12px] font-semibold text-destructive">এই ফিল্ডগুলো পূরণ করুন:</p>
-            <p className="text-[11px] text-destructive leading-snug">{missingFields.join(", ")}</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            <input
+              ref={nameInputRef}
+              autoFocus
+              value={studentName}
+              onChange={(e) => setStudentName(e.target.value)}
+              placeholder="Student name *"
+              className="col-span-2 rounded-lg border border-input bg-background px-2 py-1 text-[12px] outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+            />
+            <input
+              ref={fatherInputRef}
+              value={fatherName}
+              onChange={(e) => setFatherName(e.target.value)}
+              placeholder="Father's name *"
+              className="rounded-lg border border-input bg-background px-2 py-1 text-[12px] outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+            />
+            <input
+              ref={motherInputRef}
+              value={motherName}
+              onChange={(e) => setMotherName(e.target.value)}
+              placeholder="Mother's name *"
+              className="rounded-lg border border-input bg-background px-2 py-1 text-[12px] outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+            />
+            <input
+              ref={studentIdInputRef}
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={studentId}
+              onChange={(e) => setStudentId(e.target.value.replace(/[^0-9]/g, ""))}
+              placeholder="Student ID *"
+              className="rounded-lg border border-input bg-background px-2 py-1 text-[12px] outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+            />
+            <input
+              ref={rollInputRef}
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={rollNo}
+              onChange={(e) => setRollNo(e.target.value.replace(/[^0-9]/g, ""))}
+              placeholder="Roll *"
+              className="rounded-lg border border-input bg-background px-2 py-1 text-[12px] outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+            />
           </div>
-        )}
-        {err && <p className="text-[12px] text-destructive">{err}</p>}
-        {saved && <p className="text-[12px] text-primary font-medium">{saved}</p>}
+
+          <div className="space-y-1">
+            {subjectList.length === 0 && (
+              <p className="text-[12px] text-muted-foreground">
+                Set subject list from Settings first.
+              </p>
+            )}
+            {subjectList.map((name, idx) => {
+              const m = marks[name] || { full: "100", obt: "" };
+              const isLast = idx === subjectList.length - 1;
+              return (
+                <div
+                  key={name}
+                  className="grid grid-cols-[1fr_auto_auto] items-center gap-2 rounded-md bg-transparent shadow-none focus-within:bg-primary/15 focus-within:ring-2 focus-within:ring-primary/50 focus-within:shadow-[var(--shadow-glow-soft)] focus-within:bg-[image:var(--gradient-glow-radial)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+                >
+                  <span className="text-[12px] font-medium text-foreground truncate">{name}</span>
+                  <input
+                    inputMode="numeric"
+                    value={m.full}
+                    disabled
+                    tabIndex={-1}
+                    aria-label={`${name} full marks`}
+                    placeholder="Full"
+                    className="w-[56px] cursor-not-allowed rounded-md border border-input bg-secondary/60 px-1 py-0.5 text-[12px] text-center font-semibold text-muted-foreground opacity-100 outline-none"
+                  />
+                  <input
+                    inputMode="numeric"
+                    value={m.obt}
+                    ref={(el) => {
+                      subjectInputRefs.current[name] = el;
+                    }}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      if (raw !== "") {
+                        const val = Number(raw);
+                        const full = Number(m.full);
+                        if (!isNaN(val) && full > 0 && val > full) {
+                          toast.error(`${name}: সর্বোচ্চ ${full} নাম্বার বসানো যাবে`);
+                          return;
+                        }
+                        if (!isNaN(val) && val < 0) {
+                          toast.error("নাম্বার ০-এর কম হতে পারবে না");
+                          return;
+                        }
+                      }
+                      setMarks((p) => ({ ...p, [name]: { ...p[name], obt: raw } }));
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && isLast && !busy) {
+                        e.preventDefault();
+                        (e.currentTarget as HTMLInputElement).blur();
+                        void submit();
+                      }
+                    }}
+                    placeholder="Obt *"
+                    max={m.full}
+                    className="w-[56px] rounded-md border border-input bg-background px-1 py-0.5 text-[12px] text-center outline-none focus:border-primary"
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {missingFields.length > 0 && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1.5">
+              <p className="text-[12px] font-semibold text-destructive">এই ফিল্ডগুলো পূরণ করুন:</p>
+              <p className="text-[11px] text-destructive leading-snug">
+                {missingFields.join(", ")}
+              </p>
+            </div>
+          )}
+          {err && <p className="text-[12px] text-destructive">{err}</p>}
+          {saved && <p className="text-[12px] text-primary font-medium">{saved}</p>}
         </div>
 
         <div className="flex gap-2 border-t border-border bg-card px-3 py-2">
-          <button onClick={onClose} className="flex-1 rounded-md border border-input bg-background px-2 py-1 text-[12px] font-medium hover:bg-secondary">Cancel</button>
-          <button onClick={submit} disabled={busy} className="flex-1 rounded-md bg-[image:var(--gradient-primary)] px-2 py-1 text-[12px] font-semibold text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95 disabled:opacity-60">
+          <button
+            onClick={onClose}
+            className="flex-1 rounded-md border border-input bg-background px-2 py-1 text-[12px] font-medium hover:bg-secondary"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={submit}
+            disabled={busy}
+            className="flex-1 rounded-md bg-[image:var(--gradient-primary)] px-2 py-1 text-[12px] font-semibold text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95 disabled:opacity-60"
+          >
             {busy ? "Saving…" : "Create"}
           </button>
         </div>
@@ -3150,28 +3742,60 @@ function CreateStudentModal({
   );
 }
 
-function SmallSelect({ label, value, onChange, placeholder, options }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; options: string[] }) {
+function SmallSelect({
+  label,
+  value,
+  onChange,
+  placeholder,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  options: string[];
+}) {
   return (
     <label className="block">
-      {label && <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>}
+      {label && (
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
+      )}
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={`${label ? "mt-1" : ""} w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15 ${value ? "" : "text-muted-foreground"}`}
       >
-        <option value="" style={{ fontSize: "8.4px" }}>{placeholder ?? ""}</option>
+        <option value="" style={{ fontSize: "8.4px" }}>
+          {placeholder ?? ""}
+        </option>
         {options.map((o) => (
-          <option key={o} value={o} style={{ fontSize: "8.4px" }} className="text-foreground">{o}</option>
+          <option key={o} value={o} style={{ fontSize: "8.4px" }} className="text-foreground">
+            {o}
+          </option>
         ))}
       </select>
     </label>
   );
 }
 
-function TinyField({ label, value, onChange, placeholder }: { label?: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
+function TinyField({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label?: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
   return (
     <label className="flex items-center gap-1">
-      {label ? <span className="text-[11px] font-bold text-foreground leading-none shrink-0">{label}</span> : null}
+      {label ? (
+        <span className="text-[11px] font-bold text-foreground leading-none shrink-0">{label}</span>
+      ) : null}
       <input
         type="text"
         value={value}
@@ -3183,18 +3807,36 @@ function TinyField({ label, value, onChange, placeholder }: { label?: string; va
   );
 }
 
-function TinySelect({ label, value, onChange, placeholder, options }: { label?: string; value: string; onChange: (v: string) => void; placeholder?: string; options: string[] }) {
+function TinySelect({
+  label,
+  value,
+  onChange,
+  placeholder,
+  options,
+}: {
+  label?: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  options: string[];
+}) {
   return (
     <label className="flex items-center gap-1">
-      {label ? <span className="text-[11px] font-bold text-foreground leading-none shrink-0">{label}</span> : null}
+      {label ? (
+        <span className="text-[11px] font-bold text-foreground leading-none shrink-0">{label}</span>
+      ) : null}
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={`w-full rounded-md border border-input bg-background px-2 py-0 h-7 text-xs outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15 ${value ? "" : "text-muted-foreground"}`}
       >
-        <option value="" style={{ fontSize: "8.4px" }}>{placeholder ?? ""}</option>
+        <option value="" style={{ fontSize: "8.4px" }}>
+          {placeholder ?? ""}
+        </option>
         {options.map((o) => (
-          <option key={o} value={o} style={{ fontSize: "8.4px" }} className="text-foreground">{o}</option>
+          <option key={o} value={o} style={{ fontSize: "8.4px" }} className="text-foreground">
+            {o}
+          </option>
         ))}
       </select>
     </label>
@@ -3229,7 +3871,9 @@ function ClassExportPanel({
   const [busy, setBusy] = useState<"" | "excel">("");
   const [msg, setMsg] = useState("");
 
-  const yearOptions = Array.from({ length: 11 }, (_, i) => String(new Date().getFullYear() - 5 + i));
+  const yearOptions = Array.from({ length: 11 }, (_, i) =>
+    String(new Date().getFullYear() - 5 + i),
+  );
 
   async function fetchStudents(): Promise<StudentRecord[]> {
     let q = supabase.from("marksheet_records").select("*").eq("class_name", cls);
@@ -3266,7 +3910,11 @@ function ClassExportPanel({
       }
       s.subjects.push({
         name: r.subject,
-        fullMarks: isElementaryClass(r.class_name || cls) ? 50 : (r.full_marks != null && Number(r.full_marks) > 0 ? Number(r.full_marks) : getDefaultFullMarks(r.subject)),
+        fullMarks: isElementaryClass(r.class_name || cls)
+          ? 50
+          : r.full_marks != null && Number(r.full_marks) > 0
+            ? Number(r.full_marks)
+            : getDefaultFullMarks(r.subject),
         highestScore: r.highest_score == null ? null : Number(r.highest_score),
         obtained: r.obtained_marks == null ? null : Number(r.obtained_marks),
         letterGrade: r.letter_grade || "",
@@ -3281,29 +3929,54 @@ function ClassExportPanel({
   }
 
   async function onBackup() {
-    if (!cls) { setMsg("Class সিলেক্ট করুন"); return; }
-    setBusy("excel"); setMsg("");
+    if (!cls) {
+      setMsg("Class সিলেক্ট করুন");
+      return;
+    }
+    setBusy("excel");
+    setMsg("");
     try {
       // Home page students state থেকে directly নাও; না থাকলে DB fallback
       let rows: Array<Record<string, unknown>>;
       if (parentStudents.length > 0) {
         rows = parentStudents.flatMap((s) => {
           const base = {
-            student_name: s.studentName, father_name: s.fatherName,
-            mother_name: s.motherName, student_id: s.studentId,
-            class_name: s.className || cls, roll_no: s.rollNo,
-            exam: s.exam, year_session: s.year || yr || null,
-            gpa: s.gpa, section_position: s.sectionPosition,
-            working_days: s.workingDays, total_present: s.totalPresent,
-            moral_behavior: s.moralBehavior, co_curricular: s.coCurricular,
+            student_name: s.studentName,
+            father_name: s.fatherName,
+            mother_name: s.motherName,
+            student_id: s.studentId,
+            class_name: s.className || cls,
+            roll_no: s.rollNo,
+            exam: s.exam,
+            year_session: s.year || yr || null,
+            gpa: s.gpa,
+            section_position: s.sectionPosition,
+            working_days: s.workingDays,
+            total_present: s.totalPresent,
+            moral_behavior: s.moralBehavior,
+            co_curricular: s.coCurricular,
             comments: s.comments,
           };
-          if (s.subjects.length === 0) return [{ ...base, subject: "", full_marks: null as unknown as number, highest_score: null, obtained_marks: null, letter_grade: "", gp: null }];
+          if (s.subjects.length === 0)
+            return [
+              {
+                ...base,
+                subject: "",
+                full_marks: null as unknown as number,
+                highest_score: null,
+                obtained_marks: null,
+                letter_grade: "",
+                gp: null,
+              },
+            ];
           return s.subjects.map((sub) => ({
             ...base,
-            subject: sub.name, full_marks: sub.fullMarks,
-            highest_score: sub.highestScore, obtained_marks: sub.obtained,
-            letter_grade: sub.letterGrade, gp: sub.gp,
+            subject: sub.name,
+            full_marks: sub.fullMarks,
+            highest_score: sub.highestScore,
+            obtained_marks: sub.obtained,
+            letter_grade: sub.letterGrade,
+            gp: sub.gp,
           }));
         });
       } else {
@@ -3311,7 +3984,10 @@ function ClassExportPanel({
         if (error) throw error;
         rows = (data ?? []) as Array<Record<string, unknown>>;
       }
-      if (!rows.length) { setMsg("কোনো ডেটা পাওয়া যায়নি"); return; }
+      if (!rows.length) {
+        setMsg("কোনো ডেটা পাওয়া যায়নি");
+        return;
+      }
       const studentKeys = new Set<string>();
       for (const r of rows) studentKeys.add(`${r.student_id || ""}|${r.roll_no || ""}`);
       const { error: insErr } = await supabase.from("marksheet_history").insert({
@@ -3339,7 +4015,9 @@ function ClassExportPanel({
             .eq("class_name", cls)
             .not("id", "in", `(${keepIds.map((i) => `"${i}"`).join(",")})`);
         }
-      } catch { /* non-fatal */ }
+      } catch {
+        /* non-fatal */
+      }
       setMsg(`✓ Backup History-তে যোগ হয়েছে (${studentKeys.size} students)`);
       onBackupDone?.();
     } catch (err) {
@@ -3352,8 +4030,20 @@ function ClassExportPanel({
   return (
     <div className="space-y-2">
       <div className="grid gap-2 grid-cols-2">
-        <SmallSelect label="" value={cls} onChange={setCls} placeholder="Class" options={classOptions} />
-        <SmallSelect label="" value={yr} onChange={setYr} placeholder="Year" options={yearOptions} />
+        <SmallSelect
+          label=""
+          value={cls}
+          onChange={setCls}
+          placeholder="Class"
+          options={classOptions}
+        />
+        <SmallSelect
+          label=""
+          value={yr}
+          onChange={setYr}
+          placeholder="Year"
+          options={yearOptions}
+        />
       </div>
       <button
         type="button"
@@ -3379,7 +4069,17 @@ type HistoryRow = {
   snapshot: Array<Record<string, unknown>>;
 };
 
-function HistoryPanel({ classOptions, onRestored, hideRestore, refreshKey = 0 }: { classOptions: string[]; onRestored?: (item: HistoryRow) => void; hideRestore?: boolean; refreshKey?: number }) {
+function HistoryPanel({
+  classOptions,
+  onRestored,
+  hideRestore,
+  refreshKey = 0,
+}: {
+  classOptions: string[];
+  onRestored?: (item: HistoryRow) => void;
+  hideRestore?: boolean;
+  refreshKey?: number;
+}) {
   const { user } = useAuth();
   const [filterClass, setFilterClass] = useState("");
   const [items, setItems] = useState<HistoryRow[]>([]);
@@ -3388,9 +4088,14 @@ function HistoryPanel({ classOptions, onRestored, hideRestore, refreshKey = 0 }:
   const [confirmItem, setConfirmItem] = useState<HistoryRow | null>(null);
 
   async function load() {
-    setBusy(true); setMsg("");
+    setBusy(true);
+    setMsg("");
     try {
-      let q = supabase.from("marksheet_history").select("*").order("created_at", { ascending: false }).limit(20);
+      let q = supabase
+        .from("marksheet_history")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(20);
       if (filterClass) q = q.eq("class_name", filterClass);
       const { data, error } = await q;
       if (error) throw error;
@@ -3402,62 +4107,84 @@ function HistoryPanel({ classOptions, onRestored, hideRestore, refreshKey = 0 }:
     }
   }
 
-  useEffect(() => { void load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [filterClass, refreshKey]);
+  useEffect(() => {
+    void load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [filterClass, refreshKey]);
 
   async function downloadExcel(item: HistoryRow) {
     try {
       const rows = item.snapshot || [];
-      if (!rows.length) { setMsg("Empty snapshot"); return; }
-    // Map DB-style snake_case rows → Excel LONG-format headers so the file
-    // can be re-uploaded later through the normal Excel upload flow.
-    type Snap = Record<string, unknown>;
-    const exportRows = (rows as Snap[]).map((r) => ({
-      "Student Name": r.student_name ?? "",
-      "Father Name": r.father_name ?? "",
-      "Mother Name": r.mother_name ?? "",
-      "Student ID": r.student_id ?? "",
-      "Class": r.class_name ?? "",
-      "Roll No": r.roll_no ?? "",
-      "Exam": r.exam ?? "",
-      "Year/Session": r.year_session ?? "",
-      "Subject": r.subject ?? "",
-      "Full Marks": r.full_marks ?? "",
-      "Highest Score": r.highest_score ?? "",
-      "Obtained Marks": r.obtained_marks ?? "",
-      "Letter Grade": r.letter_grade ?? "",
-      "GP": r.gp ?? "",
-      "GPA": r.gpa ?? "",
-      "Section Position": r.section_position ?? "",
-      "Working Days": r.working_days ?? "",
-      "Total Present": r.total_present ?? "",
-      "Moral Behavior": r.moral_behavior ?? "",
-      "Co-Curricular": r.co_curricular ?? "",
-      "Comments": r.comments ?? "",
-    }));
-    const headers = [
-      "Student Name","Father Name","Mother Name","Student ID","Class","Roll No",
-      "Exam","Year/Session","Subject","Full Marks","Highest Score","Obtained Marks",
-      "Letter Grade","GP","GPA","Section Position","Working Days","Total Present",
-      "Moral Behavior","Co-Curricular","Comments",
-    ];
-    const ws = XLSX.utils.json_to_sheet(exportRows, { header: headers });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Students");
-    const safe = (s: string) => s.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
-    const stamp = new Date(item.created_at).toISOString().slice(0, 19).replace(/[:T]/g, "-");
-    const filename = `history-${safe(item.class_name)}-${stamp}.xlsx`;
-    const arr = XLSX.write(wb, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
-    const mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-    const blob = new Blob([arr], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1500);
-    setMsg(`✓ Downloaded ${filename}`);
+      if (!rows.length) {
+        setMsg("Empty snapshot");
+        return;
+      }
+      // Map DB-style snake_case rows → Excel LONG-format headers so the file
+      // can be re-uploaded later through the normal Excel upload flow.
+      type Snap = Record<string, unknown>;
+      const exportRows = (rows as Snap[]).map((r) => ({
+        "Student Name": r.student_name ?? "",
+        "Father Name": r.father_name ?? "",
+        "Mother Name": r.mother_name ?? "",
+        "Student ID": r.student_id ?? "",
+        Class: r.class_name ?? "",
+        "Roll No": r.roll_no ?? "",
+        Exam: r.exam ?? "",
+        "Year/Session": r.year_session ?? "",
+        Subject: r.subject ?? "",
+        "Full Marks": r.full_marks ?? "",
+        "Highest Score": r.highest_score ?? "",
+        "Obtained Marks": r.obtained_marks ?? "",
+        "Letter Grade": r.letter_grade ?? "",
+        GP: r.gp ?? "",
+        GPA: r.gpa ?? "",
+        "Section Position": r.section_position ?? "",
+        "Working Days": r.working_days ?? "",
+        "Total Present": r.total_present ?? "",
+        "Moral Behavior": r.moral_behavior ?? "",
+        "Co-Curricular": r.co_curricular ?? "",
+        Comments: r.comments ?? "",
+      }));
+      const headers = [
+        "Student Name",
+        "Father Name",
+        "Mother Name",
+        "Student ID",
+        "Class",
+        "Roll No",
+        "Exam",
+        "Year/Session",
+        "Subject",
+        "Full Marks",
+        "Highest Score",
+        "Obtained Marks",
+        "Letter Grade",
+        "GP",
+        "GPA",
+        "Section Position",
+        "Working Days",
+        "Total Present",
+        "Moral Behavior",
+        "Co-Curricular",
+        "Comments",
+      ];
+      const ws = XLSX.utils.json_to_sheet(exportRows, { header: headers });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Students");
+      const safe = (s: string) => s.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
+      const stamp = new Date(item.created_at).toISOString().slice(0, 19).replace(/[:T]/g, "-");
+      const filename = `history-${safe(item.class_name)}-${stamp}.xlsx`;
+      const arr = XLSX.write(wb, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
+      const mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      const blob = new Blob([arr], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      setMsg(`✓ Downloaded ${filename}`);
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "Download failed");
     }
@@ -3470,11 +4197,15 @@ function HistoryPanel({ classOptions, onRestored, hideRestore, refreshKey = 0 }:
   async function doRestore(item: HistoryRow) {
     if (!(await requireDeletePassword("Enter password to restore this snapshot:"))) return;
     setConfirmItem(null);
-    setBusy(true); setMsg("");
+    setBusy(true);
+    setMsg("");
     try {
       // প্রতিটা row-এ uploaded_by যোগ করো — না থাকলে RLS WITH CHECK fail করে
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rows = (item.snapshot as any[]).map((r: any) => ({ ...r, uploaded_by: r.uploaded_by ?? user?.id ?? null }));
+      const rows = (item.snapshot as any[]).map((r: any) => ({
+        ...r,
+        uploaded_by: r.uploaded_by ?? user?.id ?? null,
+      }));
       const { error } = await supabase
         .from("marksheet_records")
         .upsert(rows, { onConflict: "student_id,roll_no,class_name,year_session,exam,subject" });
@@ -3490,7 +4221,8 @@ function HistoryPanel({ classOptions, onRestored, hideRestore, refreshKey = 0 }:
 
   async function doDelete(item: HistoryRow) {
     if (!(await requireDeletePassword("Enter password to delete this backup:"))) return;
-    setBusy(true); setMsg("");
+    setBusy(true);
+    setMsg("");
     try {
       const { error } = await supabase.from("marksheet_history").delete().eq("id", item.id);
       if (error) throw error;
@@ -3506,7 +4238,13 @@ function HistoryPanel({ classOptions, onRestored, hideRestore, refreshKey = 0 }:
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <SmallSelect label="" value={filterClass} onChange={setFilterClass} placeholder="All classes" options={classOptions} />
+        <SmallSelect
+          label=""
+          value={filterClass}
+          onChange={setFilterClass}
+          placeholder="All classes"
+          options={classOptions}
+        />
         <button
           type="button"
           onClick={() => void load()}
@@ -3530,7 +4268,9 @@ function HistoryPanel({ classOptions, onRestored, hideRestore, refreshKey = 0 }:
                 <div className="min-w-0 flex-1 flex items-center gap-1.5">
                   <p className="text-[11px] font-semibold truncate leading-tight">
                     Class {it.class_name}
-                    {it.exam ? ` · ${it.exam.replace(" Assessment", "").replace(" Term", " Term")}` : ""}
+                    {it.exam
+                      ? ` · ${it.exam.replace(" Assessment", "").replace(" Term", " Term")}`
+                      : ""}
                   </p>
                   <span className="text-[9px] text-muted-foreground whitespace-nowrap leading-tight">
                     · {date} {time} · {it.row_count}r
@@ -3556,15 +4296,15 @@ function HistoryPanel({ classOptions, onRestored, hideRestore, refreshKey = 0 }:
                   </button>
                 )}
                 {!hideRestore && (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void doDelete(it)}
-                  title="Delete backup"
-                  className="rounded-md border border-destructive/40 bg-background p-1 text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void doDelete(it)}
+                    title="Delete backup"
+                    className="rounded-md border border-destructive/40 bg-background p-1 text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 )}
               </li>
             );
@@ -3572,27 +4312,67 @@ function HistoryPanel({ classOptions, onRestored, hideRestore, refreshKey = 0 }:
         </ul>
       )}
       {confirmItem && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4" onClick={() => setConfirmItem(null)}>
-          <div className="w-full max-w-sm rounded-xl bg-card border border-border shadow-xl p-4 space-y-3" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setConfirmItem(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-xl bg-card border border-border shadow-xl p-4 space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-sm font-bold">এই Snapshot থেকে Restore করবেন?</h3>
             <div className="text-[12px] space-y-0.5 text-foreground">
-              <p><span className="text-muted-foreground">Class:</span> {confirmItem.class_name}</p>
-              {confirmItem.exam && <p><span className="text-muted-foreground">Exam:</span> {confirmItem.exam}</p>}
-              {confirmItem.year_session && <p><span className="text-muted-foreground">Session:</span> {confirmItem.year_session}</p>}
-              <p><span className="text-muted-foreground">Students:</span> {(() => {
-                const set = new Set<string>();
-                for (const r of (confirmItem.snapshot || []) as Array<Record<string, unknown>>) {
-                  const k = `${r.student_id ?? ""}|${r.roll_no ?? ""}|${r.student_name ?? ""}`;
-                  if (k !== "||") set.add(k);
-                }
-                return set.size;
-              })()}</p>
-              <p><span className="text-muted-foreground">Saved:</span> {new Date(confirmItem.created_at).toLocaleString(undefined, { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+              <p>
+                <span className="text-muted-foreground">Class:</span> {confirmItem.class_name}
+              </p>
+              {confirmItem.exam && (
+                <p>
+                  <span className="text-muted-foreground">Exam:</span> {confirmItem.exam}
+                </p>
+              )}
+              {confirmItem.year_session && (
+                <p>
+                  <span className="text-muted-foreground">Session:</span> {confirmItem.year_session}
+                </p>
+              )}
+              <p>
+                <span className="text-muted-foreground">Students:</span>{" "}
+                {(() => {
+                  const set = new Set<string>();
+                  for (const r of (confirmItem.snapshot || []) as Array<Record<string, unknown>>) {
+                    const k = `${r.student_id ?? ""}|${r.roll_no ?? ""}|${r.student_name ?? ""}`;
+                    if (k !== "||") set.add(k);
+                  }
+                  return set.size;
+                })()}
+              </p>
+              <p>
+                <span className="text-muted-foreground">Saved:</span>{" "}
+                {new Date(confirmItem.created_at).toLocaleString(undefined, {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
             </div>
             <p className="text-[11px] text-muted-foreground">This will overwrite current data.</p>
             <div className="flex justify-end gap-2 pt-1">
-              <button type="button" onClick={() => setConfirmItem(null)} className="rounded-lg border border-input bg-background px-3 py-1.5 text-[12px] font-medium hover:bg-secondary transition-colors">Cancel</button>
-              <button type="button" onClick={() => void doRestore(confirmItem)} className="rounded-lg bg-[image:var(--gradient-primary)] px-3 py-1.5 text-[12px] font-semibold text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95 transition-opacity">Restore</button>
+              <button
+                type="button"
+                onClick={() => setConfirmItem(null)}
+                className="rounded-lg border border-input bg-background px-3 py-1.5 text-[12px] font-medium hover:bg-secondary transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void doRestore(confirmItem)}
+                className="rounded-lg bg-[image:var(--gradient-primary)] px-3 py-1.5 text-[12px] font-semibold text-primary-foreground shadow-[var(--shadow-primary)] hover:opacity-95 transition-opacity"
+              >
+                Restore
+              </button>
             </div>
           </div>
         </div>

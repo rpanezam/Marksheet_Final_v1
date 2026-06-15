@@ -1,9 +1,11 @@
 # MarksheetGenerator — CLAUDE.MD
+
 # এই ফাইল প্রতি session শুরুতে পড়তে হবে। এখানে পুরো প্রজেক্টের সঠিক তথ্য আছে।
 
 ---
 
 ## প্রজেক্ট পরিচিতি
+
 - **নাম:** MarksheetGenerator
 - **উদ্দেশ্য:** As-Sunnah Madrasah-এর শিক্ষার্থীদের মার্কশিট PDF তৈরি করা
 - **ওয়েবসাইট:** https://marksheet.as-sunnah-madrasah.org
@@ -13,23 +15,23 @@
 
 ## Technology Stack (সত্যিকার, hallucination নয়)
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend Framework | React 19 + TypeScript |
-| Routing | TanStack Router v1 (file-based routing) |
-| Server/Build | TanStack Start + Vite 7 + Nitro |
-| Package Manager | **Bun** (bun.lock আছে, npm নয়) |
-| Styling | Tailwind CSS v4 |
-| UI Components | Lucide React icons, Sonner (toast) |
-| State/Data | TanStack Query v5 |
-| Database | **Supabase PostgreSQL** |
-| Auth | Supabase Auth (email/password) |
-| PDF Generation | jsPDF + jsPDF-AutoTable |
-| Excel Parsing | xlsx (SheetJS) |
-| QR Code | qrcode |
-| Deployment | **Docker → Google Cloud Run** |
-| Web Server | **nginx:alpine** (static SPA serving, port 8080) |
-| Container Stage | Multi-stage Docker: bun builder → nginx runner |
+| Layer              | Technology                                       |
+| ------------------ | ------------------------------------------------ |
+| Frontend Framework | React 19 + TypeScript                            |
+| Routing            | TanStack Router v1 (file-based routing)          |
+| Server/Build       | TanStack Start + Vite 7 + Nitro                  |
+| Package Manager    | **Bun** (bun.lock আছে, npm নয়)                  |
+| Styling            | Tailwind CSS v4                                  |
+| UI Components      | Lucide React icons, Sonner (toast)               |
+| State/Data         | TanStack Query v5                                |
+| Database           | **Supabase PostgreSQL**                          |
+| Auth               | Supabase Auth (email/password)                   |
+| PDF Generation     | jsPDF + jsPDF-AutoTable                          |
+| Excel Parsing      | xlsx (SheetJS)                                   |
+| QR Code            | qrcode                                           |
+| Deployment         | **Docker → Google Cloud Run**                    |
+| Web Server         | **nginx:alpine** (static SPA serving, port 8080) |
+| Container Stage    | Multi-stage Docker: bun builder → nginx runner   |
 
 > ⚠️ **এটি Flutter প্রজেক্ট নয়।** `developer_instructions.md`-এ Flutter/Dart লেখা আছে কিন্তু এই নির্দিষ্ট প্রজেক্টটি React Web App।
 
@@ -37,15 +39,15 @@
 
 ## Supabase Database Tables
 
-| Table | কাজ |
-|-------|-----|
+| Table               | কাজ                                                           |
+| ------------------- | ------------------------------------------------------------- |
 | `marksheet_records` | প্রতিটি student-এর subject-wise marks (প্রতি subject = ১ row) |
-| `marksheet_history` | পুরো class-এর snapshot সেভ করা হয় |
-| `user_roles` | admin / teacher role management |
-| `teacher_classes` | কোন teacher কোন class দেখতে পারবে |
-| `teacher_passwords` | teacher-এর custom password |
-| `active_sessions` | session management (multi-login control) |
-| `app_settings` | key-value settings (JSON) |
+| `marksheet_history` | পুরো class-এর snapshot সেভ করা হয়                            |
+| `user_roles`        | admin / teacher role management                               |
+| `teacher_classes`   | কোন teacher কোন class দেখতে পারবে                             |
+| `teacher_passwords` | teacher-এর custom password                                    |
+| `active_sessions`   | session management (multi-login control)                      |
+| `app_settings`      | key-value settings (JSON)                                     |
 
 **Supabase Project ID:** `lepbljtyhscjcaoveiom`
 **URL:** `https://lepbljtyhscjcaoveiom.supabase.co`
@@ -53,6 +55,7 @@
 ---
 
 ## Roles (app_role enum)
+
 - `admin` — সব কিছু access করতে পারে
 - `teacher` — শুধু নিজের assigned class দেখতে পারে
 
@@ -108,15 +111,15 @@ supabase/
 
 ## Grading Scale (Bangladesh Standard)
 
-| Percentage | Grade | GP |
-|-----------|-------|-----|
-| 80–100 | A+ | 5.0 |
-| 70–79.99 | A | 4.0 |
-| 60–69.99 | A- | 3.5 |
-| 50–59.99 | B | 3.0 |
-| 40–49.99 | C | 2.0 |
-| 33–39.99 | D | 1.0 |
-| 0–32.99 | F | 0.0 |
+| Percentage | Grade | GP  |
+| ---------- | ----- | --- |
+| 80–100     | A+    | 5.0 |
+| 70–79.99   | A     | 4.0 |
+| 60–69.99   | A-    | 3.5 |
+| 50–59.99   | B     | 3.0 |
+| 40–49.99   | C     | 2.0 |
+| 33–39.99   | D     | 1.0 |
+| 0–32.99    | F     | 0.0 |
 
 **Special Classes:** Playgroup ও Nursery-তে সব subject-এর full marks = 50।
 
@@ -139,6 +142,7 @@ bun run format
 ```
 
 ## Docker Build (Local Test)
+
 ```bash
 docker build -t marksheet-generator .
 docker run -p 8080:8080 marksheet-generator
@@ -149,32 +153,35 @@ docker run -p 8080:8080 marksheet-generator
 ## Environment Setup Status (এই PC-তে)
 
 ### Required Tools + যাচাই করার Command
+
 এই তালিকা কখনো পুরোনো হয় না — সন্দেহ হলে নিজে চালিয়ে যাচাই করো:
 
-| Tool | দরকার কেন | Check Command |
-|------|-----------|---------------|
-| **Bun** | Package manager + build (বাধ্যতামূলক) | `bun --version` |
-| Node.js | Bun না থাকলে fallback runtime | `node --version` |
-| Docker | Container build (deploy-এর আগে) | `docker --version` |
-| gcloud | Cloud Run-এ deploy | `gcloud --version` |
-| Supabase CLI | DB migration push | `supabase --version` |
-| Git | Version control | `git --version` |
+| Tool         | দরকার কেন                             | Check Command        |
+| ------------ | ------------------------------------- | -------------------- |
+| **Bun**      | Package manager + build (বাধ্যতামূলক) | `bun --version`      |
+| Node.js      | Bun না থাকলে fallback runtime         | `node --version`     |
+| Docker       | Container build (deploy-এর আগে)       | `docker --version`   |
+| gcloud       | Cloud Run-এ deploy                    | `gcloud --version`   |
+| Supabase CLI | DB migration push                     | `supabase --version` |
+| Git          | Version control                       | `git --version`      |
 
 ### Verified Status — যাচাই করা হয়েছে: 2026-06-15
+
 > ⚠️ এটি ওই তারিখের snapshot। install state বদলাতে পারে — কোনো tool নিয়ে
 > সন্দেহ হলে উপরের check command চালিয়ে নিশ্চিত হও, অন্ধভাবে বিশ্বাস করো না।
 
-| Tool | অবস্থা | Version |
-|------|--------|---------|
-| **Bun** | ✅ আছে | 1.3.14 |
-| Node.js | ✅ আছে | v22.22.2 |
-| npm | ✅ আছে | 10.9.7 |
-| Docker | ✅ আছে | 29.5.2 |
-| gcloud | ✅ আছে | 571.0.0 (SDK) |
-| Supabase CLI | ❌ **নেই** | — |
-| Git | ✅ আছে | 2.54.0 |
+| Tool         | অবস্থা     | Version       |
+| ------------ | ---------- | ------------- |
+| **Bun**      | ✅ আছে     | 1.3.14        |
+| Node.js      | ✅ আছে     | v22.22.2      |
+| npm          | ✅ আছে     | 10.9.7        |
+| Docker       | ✅ আছে     | 29.5.2        |
+| gcloud       | ✅ আছে     | 571.0.0 (SDK) |
+| Supabase CLI | ❌ **নেই** | —             |
+| Git          | ✅ আছে     | 2.54.0        |
 
 ### ⚠️ এখনই গুরুত্বপূর্ণ (Action দরকার)
+
 1. **Supabase CLI নেই** — migration push করতে দরকার হবে। install:
    `scoop install supabase` অথবা `bunx supabase`।
 
@@ -204,6 +211,7 @@ Code Push → GitHub → Docker Build → Google Artifact Registry → Cloud Run
 ---
 
 ## PWA Features
+
 - Service Worker (`public/sw.js`) — offline support
 - Web App Manifest (`public/manifest.json`) — installable
 - Icons: 192px ও 512px (maskable + standard)
@@ -214,6 +222,7 @@ Code Push → GitHub → Docker Build → Google Artifact Registry → Cloud Run
 ## Subject Full Marks Defaults
 
 বেশিরভাগ subject = 100 marks। নিচেরগুলো = 50:
+
 - Bengali 2nd Paper, English 2nd Paper, Arabic 2nd Paper
 - Kalima, Masyala and Hadith
 - Information and Communications Technology

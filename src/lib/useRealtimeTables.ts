@@ -15,13 +15,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 const DEBOUNCE_MS = 400;
 
-export function useRealtimeTables(
-  tables: string[],
-  onChange: (table: string) => void
-) {
+export function useRealtimeTables(tables: string[], onChange: (table: string) => void) {
   // onChange কে ref এ রাখা হচ্ছে যাতে effect বারবার re-run না হয়
   const onChangeRef = useRef(onChange);
-  useEffect(() => { onChangeRef.current = onChange; });
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  });
 
   // প্রতিটি table এর জন্য আলাদা debounce timer রাখা হচ্ছে
   const timersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -35,19 +34,17 @@ export function useRealtimeTables(
 
     // প্রতিটি table এর INSERT/UPDATE/DELETE event এ debounced onChange call
     for (const table of tables) {
-      (channel as unknown as {
-        on: (ev: string, opts: Record<string, unknown>, cb: () => void) => void;
-      }).on(
-        "postgres_changes",
-        { event: "*", schema: "public", table },
-        () => {
-          // আগের pending timer বাতিল করে নতুন timer সেট করা হয়
-          clearTimeout(timersRef.current[table]);
-          timersRef.current[table] = setTimeout(() => {
-            onChangeRef.current(table);
-          }, DEBOUNCE_MS);
+      (
+        channel as unknown as {
+          on: (ev: string, opts: Record<string, unknown>, cb: () => void) => void;
         }
-      );
+      ).on("postgres_changes", { event: "*", schema: "public", table }, () => {
+        // আগের pending timer বাতিল করে নতুন timer সেট করা হয়
+        clearTimeout(timersRef.current[table]);
+        timersRef.current[table] = setTimeout(() => {
+          onChangeRef.current(table);
+        }, DEBOUNCE_MS);
+      });
     }
 
     channel.subscribe();

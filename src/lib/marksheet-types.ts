@@ -45,7 +45,10 @@ export interface StudentRecord {
   grade?: string;
   // Optional per-term marks for multi-term marksheet rendering.
   // Keys: "1st" | "2nd" | "3rd". Values: subject name -> { fullMarks, obtained, grade }
-  termsData?: Record<string, Record<string, { fullMarks: number; obtained: number | null; grade: string }>>;
+  termsData?: Record<
+    string,
+    Record<string, { fullMarks: number; obtained: number | null; grade: string }>
+  >;
 }
 
 // স্কুলের নাম ও ঠিকানা — মার্কশিটের হেডারে ব্যবহার হয়

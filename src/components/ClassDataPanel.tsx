@@ -6,7 +6,18 @@ import { requireDeletePassword } from "@/lib/deletePassword";
 import { confirmDialog, promptDialog } from "@/lib/dialog";
 
 const DEFAULT_CLASS_OPTIONS = [
-  "Playgroup","Nursery","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten",
+  "Playgroup",
+  "Nursery",
+  "One",
+  "Two",
+  "Three",
+  "Four",
+  "Five",
+  "Six",
+  "Seven",
+  "Eight",
+  "Nine",
+  "Ten",
 ];
 
 type SaveMode = "local" | "email" | "whatsapp";
@@ -26,7 +37,9 @@ function buildXlsxBlob(rows: Record<string, unknown>[]): Blob {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Records");
   const buf = XLSX.write(wb, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
-  return new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  return new Blob([buf], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
 }
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -95,12 +108,19 @@ export function ClassDataPanel({ showRemove = false, classOptions }: ClassDataPa
   const [err, setErr] = useState("");
 
   async function handleSave(mode: SaveMode) {
-    setErr(""); setMsg("");
-    if (!cls) { setErr("Class সিলেক্ট করুন"); return; }
+    setErr("");
+    setMsg("");
+    if (!cls) {
+      setErr("Class সিলেক্ট করুন");
+      return;
+    }
     setBusy(mode);
     try {
       const rows = await fetchClassRows(cls);
-      if (rows.length === 0) { setErr("এই ক্লাসে কোনো ডেটা নেই"); return; }
+      if (rows.length === 0) {
+        setErr("এই ক্লাসে কোনো ডেটা নেই");
+        return;
+      }
       const blob = buildXlsxBlob(rows as Record<string, unknown>[]);
       const filename = `class-${cls}-${new Date().toISOString().slice(0, 10)}.xlsx`;
       const file = new File([blob], filename, { type: blob.type });
@@ -129,10 +149,16 @@ export function ClassDataPanel({ showRemove = false, classOptions }: ClassDataPa
             return false;
           }
         };
-        if (await tryShare(file)) { setMsg(`✓ Share menu খোলা হয়েছে`); return; }
+        if (await tryShare(file)) {
+          setMsg(`✓ Share menu খোলা হয়েছে`);
+          return;
+        }
         // Retry as a generic binary (some browsers reject xlsx mime in canShare)
         const genericFile = new File([blob], filename, { type: "application/octet-stream" });
-        if (await tryShare(genericFile)) { setMsg(`✓ Share menu খোলা হয়েছে`); return; }
+        if (await tryShare(genericFile)) {
+          setMsg(`✓ Share menu খোলা হয়েছে`);
+          return;
+        }
         // Last resort: download + open mailto (mailto cannot auto-attach files per spec)
         downloadBlob(blob, filename);
         const mailto = `mailto:?subject=${encodeURIComponent(summary)}&body=${encodeURIComponent(`${summary}\n\nফাইলটি ডাউনলোড হয়ে গেছে — email-এ manually attach করুন: ${filename}`)}`;
@@ -146,22 +172,29 @@ export function ClassDataPanel({ showRemove = false, classOptions }: ClassDataPa
       }
 
       if (mode === "whatsapp") {
-        const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean; share?: (d: ShareData & { files?: File[] }) => Promise<void> };
+        const nav = navigator as Navigator & {
+          canShare?: (d: { files: File[] }) => boolean;
+          share?: (d: ShareData & { files?: File[] }) => Promise<void>;
+        };
         if (nav.canShare?.({ files: [file] }) && nav.share) {
           try {
             await nav.share({ files: [file], title: summary, text: summary });
             setMsg(`✓ WhatsApp/share menu খোলা হয়েছে`);
             return;
-          } catch { /* fallback */ }
+          } catch {
+            /* fallback */
+          }
         }
         // Fallback: download + open wa.me text
         downloadBlob(blob, filename);
-        const phone = (await promptDialog({
-          title: "WhatsApp number",
-          message: "Enter WhatsApp number with country code (e.g. 8801XXXXXXXXX). Leave blank to just open the share screen.",
-          placeholder: "8801XXXXXXXXX",
-          confirmText: "Open WhatsApp",
-        })) ?? "";
+        const phone =
+          (await promptDialog({
+            title: "WhatsApp number",
+            message:
+              "Enter WhatsApp number with country code (e.g. 8801XXXXXXXXX). Leave blank to just open the share screen.",
+            placeholder: "8801XXXXXXXXX",
+            confirmText: "Open WhatsApp",
+          })) ?? "";
         const wa = `https://wa.me/${encodeURIComponent(phone.trim())}?text=${encodeURIComponent(`${summary}\n\nফাইলটি ডাউনলোড হয়ে গেছে — চ্যাটে attach করুন: ${filename}`)}`;
         window.open(wa, "_blank");
         setMsg(`✓ ফাইল ডাউনলোড + WhatsApp খোলা হয়েছে — file টি attach করুন`);
@@ -175,15 +208,23 @@ export function ClassDataPanel({ showRemove = false, classOptions }: ClassDataPa
   }
 
   async function handleRemove() {
-    setErr(""); setMsg("");
-    if (!cls) { setErr("Class সিলেক্ট করুন"); return; }
-    if (!(await confirmDialog({
-      title: `Delete all records for ${cls}?`,
-      message: `Every marksheet record under class "${cls}" will be permanently deleted. This cannot be undone.`,
-      confirmText: "Delete",
-      destructive: true,
-    }))) return;
-    if (!(await requireDeletePassword(`Enter password to delete all data for class "${cls}":`))) return;
+    setErr("");
+    setMsg("");
+    if (!cls) {
+      setErr("Class সিলেক্ট করুন");
+      return;
+    }
+    if (
+      !(await confirmDialog({
+        title: `Delete all records for ${cls}?`,
+        message: `Every marksheet record under class "${cls}" will be permanently deleted. This cannot be undone.`,
+        confirmText: "Delete",
+        destructive: true,
+      }))
+    )
+      return;
+    if (!(await requireDeletePassword(`Enter password to delete all data for class "${cls}":`)))
+      return;
     setBusy("remove");
     try {
       const { error, count } = await supabase
@@ -203,12 +244,18 @@ export function ClassDataPanel({ showRemove = false, classOptions }: ClassDataPa
     <section className="rounded-xl border border-border bg-card p-3 shadow-[var(--shadow-card)] space-y-2.5">
       <select
         value={cls}
-        onChange={(e) => { setCls(e.target.value); setMsg(""); setErr(""); }}
+        onChange={(e) => {
+          setCls(e.target.value);
+          setMsg("");
+          setErr("");
+        }}
         className={`w-full rounded-lg border border-input bg-background px-3 py-2 text-xs outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 ${cls ? "" : "text-muted-foreground"}`}
       >
         <option value="">Class সিলেক্ট করুন</option>
         {options.map((c) => (
-          <option key={c} value={c} className="text-foreground">{c}</option>
+          <option key={c} value={c} className="text-foreground">
+            {c}
+          </option>
         ))}
       </select>
 
@@ -219,7 +266,11 @@ export function ClassDataPanel({ showRemove = false, classOptions }: ClassDataPa
           disabled={!!busy || !cls}
           className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-destructive/40 bg-background px-3 py-2 text-[11px] font-semibold text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
         >
-          {busy === "remove" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+          {busy === "remove" ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Trash2 className="h-3.5 w-3.5" />
+          )}
           Remove Class Data
         </button>
       )}

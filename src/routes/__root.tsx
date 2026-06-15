@@ -86,14 +86,26 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "As-Sunnah" },
-      { name: "description", content: "Generate personalized marksheets from Excel data and download them as a single PDF." },
+      {
+        name: "description",
+        content:
+          "Generate personalized marksheets from Excel data and download them as a single PDF.",
+      },
       { name: "author", content: "As-Sunnah" },
       { property: "og:title", content: "As-Sunnah" },
-      { property: "og:description", content: "Generate personalized marksheets from Excel data and download them as a single PDF." },
+      {
+        property: "og:description",
+        content:
+          "Generate personalized marksheets from Excel data and download them as a single PDF.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "As-Sunnah" },
-      { name: "twitter:description", content: "Generate personalized marksheets from Excel data and download them as a single PDF." },
+      {
+        name: "twitter:description",
+        content:
+          "Generate personalized marksheets from Excel data and download them as a single PDF.",
+      },
       { name: "theme-color", content: "#0f7a3a" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
@@ -159,14 +171,18 @@ function RootComponent() {
       if (p && typeof p.then === "function") {
         p.then(() => {
           played = true;
-          try { sessionStorage.setItem("bismillah-played", "1"); } catch {}
+          try {
+            sessionStorage.setItem("bismillah-played", "1");
+          } catch {}
           cleanup();
         }).catch(() => {});
       }
     };
 
     const events = ["pointerdown", "click", "touchstart", "keydown", "mousedown"] as const;
-    const onGesture = () => { tryPlay(); };
+    const onGesture = () => {
+      tryPlay();
+    };
 
     const cleanup = () => {
       events.forEach((ev) => {

@@ -90,7 +90,9 @@ function VerifyPage() {
       else setRows((data ?? []) as Row[]);
       setLoading(false);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [studentId]);
 
   if (loading) {
@@ -111,7 +113,9 @@ function VerifyPage() {
             Student ID <span className="font-mono">{studentId}</span> এর কোনো record পাওয়া যায়নি।
             এই মার্কশীটটি জাল হতে পারে।
           </p>
-          <Link to="/" className="text-sm text-primary underline">হোমে ফিরুন</Link>
+          <Link to="/" className="text-sm text-primary underline">
+            হোমে ফিরুন
+          </Link>
         </div>
       </main>
     );
@@ -156,7 +160,9 @@ function VerifyPage() {
         {/* Each exam result */}
         {Array.from(groups.entries()).map(([key, subjects]) => {
           const meta = subjects[0];
-          let totalFull = 0, totalObt = 0, failed = 0;
+          let totalFull = 0,
+            totalObt = 0,
+            failed = 0;
           for (const s of subjects) {
             totalFull += s.full_marks ?? 0;
             totalObt += s.obtained_marks ?? 0;
@@ -169,13 +175,18 @@ function VerifyPage() {
           const overall = getGrade(overallPct);
           const status = failed === 0 && totalObt > 0 ? "Pass" : "Fail";
           return (
-            <section key={key} className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-3">
+            <section
+              key={key}
+              className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-3"
+            >
               <header className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-semibold">{meta.exam || "-"}</h3>
                   <p className="text-[11px] text-muted-foreground">{meta.year_session || ""}</p>
                 </div>
-                <span className={`text-xs font-bold px-2 py-1 rounded ${status === "Pass" ? "bg-primary/15 text-primary" : "bg-destructive/15 text-destructive"}`}>
+                <span
+                  className={`text-xs font-bold px-2 py-1 rounded ${status === "Pass" ? "bg-primary/15 text-primary" : "bg-destructive/15 text-destructive"}`}
+                >
                   {status}
                 </span>
               </header>
@@ -197,7 +208,9 @@ function VerifyPage() {
                         <tr key={i} className="border-t border-border">
                           <td className="p-1.5">{s.subject}</td>
                           <td className="text-right p-1.5">{s.full_marks ?? "-"}</td>
-                          <td className="text-right p-1.5 font-semibold">{s.obtained_marks ?? "-"}</td>
+                          <td className="text-right p-1.5 font-semibold">
+                            {s.obtained_marks ?? "-"}
+                          </td>
                           <td className="text-center p-1.5">{g}</td>
                         </tr>
                       );
@@ -211,7 +224,10 @@ function VerifyPage() {
                 <Stat label="Grade" value={overall.grade} />
               </div>
               {meta.section_position && (
-                <p className="text-[11px] text-muted-foreground">Position: <span className="font-semibold text-foreground">{meta.section_position}</span></p>
+                <p className="text-[11px] text-muted-foreground">
+                  Position:{" "}
+                  <span className="font-semibold text-foreground">{meta.section_position}</span>
+                </p>
               )}
             </section>
           );

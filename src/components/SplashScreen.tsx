@@ -31,8 +31,7 @@ export function SplashScreen() {
         fade ? "opacity-0" : "opacity-100"
       }`}
       style={{
-        background:
-          "radial-gradient(circle at 50% 40%, #ffffff 0%, #f5faf6 55%, #e6f1e9 100%)",
+        background: "radial-gradient(circle at 50% 40%, #ffffff 0%, #f5faf6 55%, #e6f1e9 100%)",
       }}
     >
       {/* soft halo glow behind logo */}
@@ -56,8 +55,7 @@ export function SplashScreen() {
           filter: "drop-shadow(0 12px 24px rgba(34,139,75,0.25))",
           background: "#ffffff",
           border: "2px solid rgba(201,166,70,0.55)",
-          boxShadow:
-            "0 0 0 6px rgba(34,139,75,0.08), 0 12px 30px rgba(34,139,75,0.25)",
+          boxShadow: "0 0 0 6px rgba(34,139,75,0.08), 0 12px 30px rgba(34,139,75,0.25)",
         }}
       />
 
@@ -94,8 +92,7 @@ export function SplashScreen() {
       <div
         className="relative mt-4 h-px w-32"
         style={{
-          background:
-            "linear-gradient(90deg, transparent, #c9a646 50%, transparent)",
+          background: "linear-gradient(90deg, transparent, #c9a646 50%, transparent)",
           animation: "splash-fade-up 700ms 700ms both",
         }}
       />
