@@ -199,6 +199,18 @@ VITE_SUPABASE_PROJECT_ID=lepbljtyhscjcaoveiom
 
 ---
 
+## শেষ Deploy তথ্য
+
+| বিষয় | মান |
+|------|-----|
+| তারিখ | 2026-06-15 |
+| Revision | `marksheetgenerator-crs-00058-4f5` |
+| Service URL | https://marksheetgenerator-crs-210083243076.us-central1.run.app |
+| Custom Domain | https://marksheet.as-sunnah-madrasah.org |
+| Status | ✅ 100% traffic serving |
+
+---
+
 ## Deployment Flow
 
 ```
