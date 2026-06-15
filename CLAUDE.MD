@@ -229,9 +229,10 @@ gcloud artifacts docker images list us-central1-docker.pkg.dev/gmail-and-telegra
 gcloud artifacts docker images delete us-central1-docker.pkg.dev/gmail-and-telegram-480114/cloud-run-source-deploy/marksheetgenerator-crs@sha256:DIGEST --delete-tags
 ```
 
-### Deploy করার আগে Claude-কে মনে করিয়ে দেওয়ার নিয়ম
-প্রতিটি deploy-এর পরে Claude বলবে:
-> "স্যার, Artifact Registry-তে ৩টির বেশি image থাকলে পুরোনোগুলো delete করুন — চার্জ এড়াতে।"
+### ⚠️ Claude-এর বাধ্যতামূলক নিয়ম (প্রতিটি deploy-এর পরে)
+- সর্বোচ্চ **৩টি** image রাখতে হবে — এর বেশি রাখা যাবে না।
+- Deploy শেষ হলে Claude অবশ্যই বলবে: "স্যার, Artifact Registry-তে ৩টির বেশি image থাকলে পুরোনোগুলো delete করুন।"
+- এটা skip করা যাবে না — আগে $11 চার্জ এসেছিল।
 
 ---
 
