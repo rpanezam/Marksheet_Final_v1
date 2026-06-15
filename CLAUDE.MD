@@ -199,6 +199,42 @@ VITE_SUPABASE_PROJECT_ID=lepbljtyhscjcaoveiom
 
 ---
 
+## Artifact Registry — Image Cleanup Policy (গুরুত্বপূর্ণ, চার্জ এড়াতে)
+
+### নিয়ম: সর্বোচ্চ ৩টি image রাখতে হবে
+> আগে অনেক image জমে $11 চার্জ হয়েছিল। এই নিয়ম না মানলে আবার চার্জ আসবে।
+
+| রাখব | কারণ |
+|------|------|
+| Latest (current) | এখন live যেটা চলছে |
+| Previous (1টি) | Rollback দরকার হলে |
+| One before (1টি) | Emergency backup |
+| বাকি সব | ❌ Delete করতে হবে |
+
+### প্রতিটি Deploy-এর পরে করণীয়
+পুরোনো image মুছে রাখতে **GCP Console-এ Cleanup Policy** সেট করো:
+1. GCP Console → Artifact Registry → `cloud-run-source-deploy`
+2. Repository details → **Cleanup Policies** tab
+3. **Add Policy** → "Keep most recent versions" → **Count: 3**
+4. Save
+
+এটা একবার সেট করলে GCP নিজেই পুরোনো image auto-delete করবে।
+
+### Manual Delete (দরকার হলে)
+```powershell
+# Image list দেখতে
+gcloud artifacts docker images list us-central1-docker.pkg.dev/gmail-and-telegram-480114/cloud-run-source-deploy/marksheetgenerator-crs --include-tags --sort-by="~createTime"
+
+# নির্দিষ্ট image delete করতে (digest দিয়ে)
+gcloud artifacts docker images delete us-central1-docker.pkg.dev/gmail-and-telegram-480114/cloud-run-source-deploy/marksheetgenerator-crs@sha256:DIGEST --delete-tags
+```
+
+### Deploy করার আগে Claude-কে মনে করিয়ে দেওয়ার নিয়ম
+প্রতিটি deploy-এর পরে Claude বলবে:
+> "স্যার, Artifact Registry-তে ৩টির বেশি image থাকলে পুরোনোগুলো delete করুন — চার্জ এড়াতে।"
+
+---
+
 ## শেষ Deploy তথ্য
 
 | বিষয় | মান |
